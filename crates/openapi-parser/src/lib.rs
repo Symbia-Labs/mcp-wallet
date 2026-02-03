@@ -9,6 +9,7 @@ mod auth;
 mod operations;
 mod namespace;
 mod error;
+mod resolver;
 
 pub use types::*;
 pub use parser::OpenApiParser;

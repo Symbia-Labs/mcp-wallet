@@ -2,6 +2,7 @@
 
 use crate::types::*;
 use crate::error::ParseResult;
+use crate::resolver::SchemaResolver;
 use indexmap::IndexMap;
 
 /// Extracts operations from raw OpenAPI spec structures
@@ -12,12 +13,21 @@ impl OperationExtractor {
     pub fn extract(spec: &RawOpenApiSpec) -> ParseResult<Vec<ApiOperation>> {
         let mut operations = Vec::new();
 
+        // Get component schemas for resolving $ref
+        let empty_schemas = IndexMap::new();
+        let schemas = spec
+            .components
+            .as_ref()
+            .map(|c| &c.schemas)
+            .unwrap_or(&empty_schemas);
+        let resolver = SchemaResolver::new(schemas);
+
         for (path, path_item) in &spec.paths {
             // Extract path-level parameters
             let path_params: Vec<OperationParameter> = path_item
                 .parameters
                 .iter()
-                .filter_map(|p| Self::convert_parameter(p))
+                .filter_map(|p| Self::convert_parameter(p, &resolver))
                 .collect();
 
             // Process each HTTP method
@@ -34,7 +44,7 @@ impl OperationExtractor {
 
             for (method, operation) in methods {
                 if let Some(op) = operation {
-                    let api_op = Self::extract_operation(path, method, op, &path_params, spec)?;
+                    let api_op = Self::extract_operation(path, method, op, &path_params, spec, &resolver)?;
                     operations.push(api_op);
                 }
             }
@@ -50,6 +60,7 @@ impl OperationExtractor {
         operation: &RawOperation,
         path_params: &[OperationParameter],
         spec: &RawOpenApiSpec,
+        resolver: &SchemaResolver,
     ) -> ParseResult<ApiOperation> {
         // Generate operation ID if not provided
         let operation_id = operation.operation_id.clone().unwrap_or_else(|| {
@@ -62,16 +73,16 @@ impl OperationExtractor {
         // Combine path-level and operation-level parameters
         let mut parameters = path_params.to_vec();
         for param in &operation.parameters {
-            if let Some(p) = Self::convert_parameter(param) {
+            if let Some(p) = Self::convert_parameter(param, resolver) {
                 // Remove any path-level param with the same name
                 parameters.retain(|existing| existing.name != p.name);
                 parameters.push(p);
             }
         }
 
-        // Extract request body
+        // Extract request body with schema resolution
         let request_body = operation.request_body.as_ref().and_then(|body| {
-            Self::extract_request_body(body)
+            Self::extract_request_body(body, resolver)
         });
 
         // Extract responses
@@ -139,7 +150,7 @@ impl OperationExtractor {
     }
 
     /// Convert a raw parameter to our parameter type
-    fn convert_parameter(param: &RawParameter) -> Option<OperationParameter> {
+    fn convert_parameter(param: &RawParameter, resolver: &SchemaResolver) -> Option<OperationParameter> {
         // Skip references for now (would need to resolve them)
         if param.reference.is_some() {
             return None;
@@ -153,28 +164,34 @@ impl OperationExtractor {
             _ => return None,
         };
 
+        // Resolve schema if it contains $ref
+        let schema = param.schema.as_ref().map(|s| resolver.resolve(s));
+
         Some(OperationParameter {
             name: param.name.clone(),
             location,
             required: param.required || location == ParameterLocation::Path,
             description: param.description.clone(),
-            schema: param.schema.clone(),
+            schema,
             example: param.example.clone(),
             deprecated: param.deprecated,
         })
     }
 
     /// Extract request body information
-    fn extract_request_body(body: &RawRequestBody) -> Option<RequestBody> {
+    fn extract_request_body(body: &RawRequestBody, resolver: &SchemaResolver) -> Option<RequestBody> {
         // Prefer JSON content type
         let (content_type, media) = body.content.iter()
             .find(|(ct, _)| ct.contains("json"))
             .or_else(|| body.content.first())?;
 
+        // Resolve the schema, following any $ref references
+        let schema = media.schema.as_ref().map(|s| resolver.resolve(s));
+
         Some(RequestBody {
             required: body.required,
             content_type: content_type.clone(),
-            schema: media.schema.clone(),
+            schema,
             description: body.description.clone(),
         })
     }
