@@ -159,7 +159,7 @@ jobs:
             "mcp-wallet-server-${{ matrix.target }}"
 
       - name: Prepare artifacts (Linux)
-        if: matrix.platform == 'ubuntu-22.04'
+        if: matrix.platform == 'ubuntu-24.04'
         run: |
           # Deb package
           cp target/${{ matrix.target }}/release/bundle/deb/*.deb \
