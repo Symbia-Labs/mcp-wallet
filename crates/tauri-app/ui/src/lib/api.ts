@@ -18,6 +18,10 @@ export async function lockWallet(): Promise<void> {
   await invoke("lock_wallet");
 }
 
+export async function resetWallet(): Promise<void> {
+  await invoke("reset_wallet");
+}
+
 // Integrations
 export async function listIntegrations(): Promise<Integration[]> {
   return await invoke<Integration[]>("list_integrations");
@@ -29,6 +33,10 @@ export async function addIntegration(key: string, specUrl: string): Promise<Inte
 
 export async function removeIntegration(key: string): Promise<void> {
   await invoke("remove_integration", { key });
+}
+
+export async function syncIntegration(key: string): Promise<Integration> {
+  return await invoke<Integration>("sync_integration", { key });
 }
 
 // Credentials

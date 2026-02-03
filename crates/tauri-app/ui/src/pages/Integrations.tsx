@@ -20,6 +20,7 @@ import {
   Eye,
   EyeOff,
   Shield,
+  RefreshCw,
 } from "lucide-react";
 import {
   IntegrationDef,
@@ -33,7 +34,7 @@ import {
   searchIntegrations,
   getIntegrationsByCategory,
 } from "../lib/catalog";
-import { listIntegrations, addIntegration, removeIntegration, addCredential, bindCredential, getOperations } from "../lib/api";
+import { listIntegrations, addIntegration, removeIntegration, syncIntegration, addCredential, bindCredential, getOperations } from "../lib/api";
 
 const CATEGORY_ICONS: Record<IntegrationCategory, React.ComponentType<{ className?: string }>> = {
   ai_models: Brain,
@@ -62,6 +63,7 @@ export default function IntegrationsPage() {
   const [installedIntegrations, setInstalledIntegrations] = useState<Integration[]>([]);
   const [loading, setLoading] = useState(true);
   const [removingId, setRemovingId] = useState<string | null>(null);
+  const [syncingId, setSyncingId] = useState<string | null>(null);
   const [addModalDef, setAddModalDef] = useState<IntegrationDef | null>(null);
   const [showCustomModal, setShowCustomModal] = useState(false);
   const [opsModalIntegration, setOpsModalIntegration] = useState<Integration | null>(null);
@@ -116,6 +118,18 @@ export default function IntegrationsPage() {
       console.error("Failed to remove integration:", error);
     } finally {
       setRemovingId(null);
+    }
+  };
+
+  const handleSync = async (key: string) => {
+    setSyncingId(key);
+    try {
+      await syncIntegration(key);
+      await loadInstalledIntegrations();
+    } catch (error) {
+      console.error("Failed to sync integration:", error);
+    } finally {
+      setSyncingId(null);
     }
   };
 
@@ -217,6 +231,7 @@ export default function IntegrationsPage() {
           {filteredIntegrations.map((def) => {
             const installed = getInstallStatus(def);
             const isRemoving = removingId === def.id;
+            const isSyncing = syncingId === def.id;
             const info = CATEGORY_INFO[def.category];
             const Icon = CATEGORY_ICONS[def.category];
 
@@ -299,9 +314,22 @@ export default function IntegrationsPage() {
                 <div className="flex items-center gap-2">
                   {installed ? (
                     <>
+                      {/* Sync button - re-fetches OpenAPI spec */}
+                      <button
+                        onClick={() => handleSync(installed.key)}
+                        disabled={isSyncing || isRemoving}
+                        className="flex items-center justify-center gap-2 px-3 py-2 rounded-lg bg-blue-500/10 text-blue-400 hover:bg-blue-500/20 transition-colors disabled:opacity-50"
+                        title="Sync integration (re-fetch OpenAPI spec)"
+                      >
+                        {isSyncing ? (
+                          <Loader2 className="w-4 h-4 animate-spin" />
+                        ) : (
+                          <RefreshCw className="w-4 h-4" />
+                        )}
+                      </button>
                       <button
                         onClick={() => handleRemove(installed.key)}
-                        disabled={isRemoving}
+                        disabled={isRemoving || isSyncing}
                         className="flex-1 flex items-center justify-center gap-2 px-4 py-2 rounded-lg bg-red-500/10 text-red-400 hover:bg-red-500/20 transition-colors disabled:opacity-50"
                       >
                         {isRemoving ? (

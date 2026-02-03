@@ -339,6 +339,31 @@ impl Wallet {
         let keychain = crate::storage::KeychainStorage::new(None);
         keychain.is_available()
     }
+
+    /// Reset the wallet completely - deletes ALL data including integrations, credentials, and settings
+    /// WARNING: This is irreversible!
+    pub async fn reset(&mut self) -> Result<()> {
+        info!("Resetting wallet - deleting all data");
+
+        // Clear storage
+        self.storage.clear().await?;
+
+        // Clear session
+        let _ = self.session_manager.clear_session().await;
+
+        // Reset settings
+        self.settings_manager.reset().await?;
+
+        // Clear in-memory state
+        self.master_key = None;
+        self.storage.set_master_key(None).await;
+        self.credentials.set_master_key(None).await;
+
+        self.state = WalletState::NotInitialized;
+
+        info!("Wallet reset complete");
+        Ok(())
+    }
 }
 
 #[cfg(test)]

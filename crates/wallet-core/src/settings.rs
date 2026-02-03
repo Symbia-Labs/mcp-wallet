@@ -145,6 +145,19 @@ impl SettingsManager {
         self.settings.auto_lock_timeout_minutes = minutes;
         self.save().await
     }
+
+    /// Reset settings to defaults and delete settings file
+    pub async fn reset(&mut self) -> Result<()> {
+        self.settings = Settings::default();
+
+        // Delete settings file if it exists
+        if self.settings_file.exists() {
+            tokio::fs::remove_file(&self.settings_file).await
+                .map_err(|e| crate::error::WalletError::StorageError(e.to_string()))?;
+        }
+
+        Ok(())
+    }
 }
 
 #[cfg(test)]

@@ -247,6 +247,12 @@ async fn lock_wallet(state: State<'_, AppState>) -> Result<(), String> {
     wallet.lock().await.map_err(|e| e.to_string())
 }
 
+#[tauri::command]
+async fn reset_wallet(state: State<'_, AppState>) -> Result<(), String> {
+    let mut wallet = state.wallet.write().await;
+    wallet.reset().await.map_err(|e| e.to_string())
+}
+
 // ============================================================================
 // Integration Commands
 // ============================================================================
@@ -288,6 +294,23 @@ async fn remove_integration(
 ) -> Result<(), String> {
     let wallet = state.wallet.read().await;
     wallet.integrations.remove(&key).await.map_err(|e| e.to_string())
+}
+
+#[tauri::command]
+async fn sync_integration(
+    key: String,
+    state: State<'_, AppState>,
+) -> Result<IntegrationResponse, String> {
+    let wallet = state.wallet.read().await;
+    wallet.integrations.sync(&key).await.map_err(|e| e.to_string())?;
+
+    let integration = wallet
+        .integrations
+        .get(&key)
+        .await
+        .ok_or_else(|| format!("Integration '{}' not found after sync", key))?;
+
+    Ok(IntegrationResponse::from(integration))
 }
 
 #[tauri::command]
@@ -545,9 +568,11 @@ fn main() {
             initialize_wallet,
             unlock_wallet,
             lock_wallet,
+            reset_wallet,
             list_integrations,
             add_integration,
             remove_integration,
+            sync_integration,
             get_operations,
             list_credentials,
             add_credential,

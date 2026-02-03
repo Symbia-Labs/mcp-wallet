@@ -28,6 +28,7 @@ import {
   OtelSettings,
   getAutoLockTimeout,
   setAutoLockTimeout,
+  resetWallet,
 } from "../lib/api";
 
 export default function SettingsPage() {
@@ -52,6 +53,8 @@ export default function SettingsPage() {
   const [otelSaving, setOtelSaving] = useState(false);
   const [otelSaved, setOtelSaved] = useState(false);
   const [autoLockTimeout, setAutoLockTimeoutState] = useState(15);
+  const [showResetConfirm, setShowResetConfirm] = useState(false);
+  const [resetting, setResetting] = useState(false);
 
   useEffect(() => {
     loadServerStatus();
@@ -162,6 +165,19 @@ export default function SettingsPage() {
     navigator.clipboard.writeText(executablePath);
     setCopiedPath(true);
     setTimeout(() => setCopiedPath(false), 2000);
+  };
+
+  const handleReset = async () => {
+    setResetting(true);
+    try {
+      await resetWallet();
+      // Reload the page to show the "not initialized" state
+      window.location.reload();
+    } catch (error) {
+      console.error("Failed to reset wallet:", error);
+      setResetting(false);
+      setShowResetConfirm(false);
+    }
   };
 
   return (
@@ -604,7 +620,10 @@ export default function SettingsPage() {
                 Delete all integrations, credentials, and settings
               </p>
             </div>
-            <button className="flex items-center gap-2 px-4 py-2 rounded-lg bg-red-500/10 text-red-400 hover:bg-red-500/20 transition-colors">
+            <button
+              onClick={() => setShowResetConfirm(true)}
+              className="flex items-center gap-2 px-4 py-2 rounded-lg bg-red-500/10 text-red-400 hover:bg-red-500/20 transition-colors"
+            >
               <Trash2 className="w-4 h-4" />
               Reset
             </button>
@@ -630,6 +649,58 @@ export default function SettingsPage() {
           </a>
         </p>
       </div>
+
+      {/* Reset Confirmation Modal */}
+      {showResetConfirm && (
+        <div className="fixed inset-0 bg-black/60 flex items-center justify-center p-4 z-50">
+          <div className="bg-surface-elevated rounded-2xl border border-red-500/30 w-full max-w-md animate-slideIn">
+            <div className="px-6 py-4 border-b border-red-500/30 bg-red-500/5">
+              <div className="flex items-center gap-3">
+                <AlertTriangle className="w-6 h-6 text-red-400" />
+                <h2 className="text-lg font-semibold text-red-400">Confirm Reset</h2>
+              </div>
+            </div>
+
+            <div className="p-6 space-y-4">
+              <p className="text-gray-300">
+                Are you sure you want to reset the wallet? This will permanently delete:
+              </p>
+              <ul className="list-disc list-inside text-sm text-gray-400 space-y-1">
+                <li>All integrations and their configurations</li>
+                <li>All stored API credentials</li>
+                <li>All settings and preferences</li>
+              </ul>
+              <p className="text-red-400 font-medium">
+                This action cannot be undone!
+              </p>
+
+              <div className="flex gap-3 pt-4">
+                <button
+                  onClick={() => setShowResetConfirm(false)}
+                  disabled={resetting}
+                  className="flex-1 px-4 py-3 rounded-xl border border-gray-700 text-gray-300 hover:bg-gray-800 transition-colors disabled:opacity-50"
+                >
+                  Cancel
+                </button>
+                <button
+                  onClick={handleReset}
+                  disabled={resetting}
+                  className="flex-1 flex items-center justify-center gap-2 px-4 py-3 rounded-xl bg-red-500 hover:bg-red-600 text-white transition-colors disabled:opacity-50"
+                >
+                  {resetting ? (
+                    <Loader2 className="w-4 h-4 animate-spin" />
+                  ) : (
+                    <>
+                      <Trash2 className="w-4 h-4" />
+                      Reset Wallet
+                    </>
+                  )}
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }
