@@ -277,8 +277,11 @@ pub struct RawOperation {
 
 #[derive(Debug, Clone, Deserialize)]
 pub struct RawParameter {
+    /// Parameter name (optional when $ref is used)
+    #[serde(default)]
     pub name: String,
-    #[serde(rename = "in")]
+    /// Parameter location (optional when $ref is used)
+    #[serde(rename = "in", default)]
     pub location: String,
     #[serde(default)]
     pub required: bool,
@@ -287,6 +290,7 @@ pub struct RawParameter {
     pub example: Option<serde_json::Value>,
     #[serde(default)]
     pub deprecated: bool,
+    /// Reference to a parameter in components/parameters
     #[serde(rename = "$ref")]
     pub reference: Option<String>,
 }

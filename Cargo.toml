@@ -82,3 +82,7 @@ path = "examples/mcp_test.rs"
 [[example]]
 name = "debug_openai"
 path = "examples/debug_openai.rs"
+
+[[example]]
+name = "test_all_specs"
+path = "examples/test_all_specs.rs"

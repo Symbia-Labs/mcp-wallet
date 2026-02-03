@@ -15,11 +15,17 @@ impl OperationExtractor {
 
         // Get component schemas for resolving $ref
         let empty_schemas = IndexMap::new();
+        let empty_params = IndexMap::new();
         let schemas = spec
             .components
             .as_ref()
             .map(|c| &c.schemas)
             .unwrap_or(&empty_schemas);
+        let component_params = spec
+            .components
+            .as_ref()
+            .map(|c| &c.parameters)
+            .unwrap_or(&empty_params);
         let resolver = SchemaResolver::new(schemas);
 
         for (path, path_item) in &spec.paths {
@@ -27,7 +33,7 @@ impl OperationExtractor {
             let path_params: Vec<OperationParameter> = path_item
                 .parameters
                 .iter()
-                .filter_map(|p| Self::convert_parameter(p, &resolver))
+                .filter_map(|p| Self::convert_parameter(p, &resolver, component_params))
                 .collect();
 
             // Process each HTTP method
@@ -44,7 +50,7 @@ impl OperationExtractor {
 
             for (method, operation) in methods {
                 if let Some(op) = operation {
-                    let api_op = Self::extract_operation(path, method, op, &path_params, spec, &resolver)?;
+                    let api_op = Self::extract_operation(path, method, op, &path_params, spec, &resolver, component_params)?;
                     operations.push(api_op);
                 }
             }
@@ -61,6 +67,7 @@ impl OperationExtractor {
         path_params: &[OperationParameter],
         spec: &RawOpenApiSpec,
         resolver: &SchemaResolver,
+        component_params: &IndexMap<String, RawParameter>,
     ) -> ParseResult<ApiOperation> {
         // Generate operation ID if not provided
         let operation_id = operation.operation_id.clone().unwrap_or_else(|| {
@@ -73,7 +80,7 @@ impl OperationExtractor {
         // Combine path-level and operation-level parameters
         let mut parameters = path_params.to_vec();
         for param in &operation.parameters {
-            if let Some(p) = Self::convert_parameter(param, resolver) {
+            if let Some(p) = Self::convert_parameter(param, resolver, component_params) {
                 // Remove any path-level param with the same name
                 parameters.retain(|existing| existing.name != p.name);
                 parameters.push(p);
@@ -150,13 +157,29 @@ impl OperationExtractor {
     }
 
     /// Convert a raw parameter to our parameter type
-    fn convert_parameter(param: &RawParameter, resolver: &SchemaResolver) -> Option<OperationParameter> {
-        // Skip references for now (would need to resolve them)
-        if param.reference.is_some() {
+    fn convert_parameter(
+        param: &RawParameter,
+        resolver: &SchemaResolver,
+        component_params: &IndexMap<String, RawParameter>,
+    ) -> Option<OperationParameter> {
+        // Resolve reference if present
+        let resolved_param = if let Some(ref_str) = &param.reference {
+            // Parse refs like "#/components/parameters/pagination-before"
+            const PREFIX: &str = "#/components/parameters/";
+            if ref_str.starts_with(PREFIX) {
+                let param_name = &ref_str[PREFIX.len()..];
+                component_params.get(param_name)?
+            } else {
+                return None; // Unknown ref format
+            }
+        } else if param.name.is_empty() {
+            // No ref and no name - invalid parameter
             return None;
-        }
+        } else {
+            param
+        };
 
-        let location = match param.location.as_str() {
+        let location = match resolved_param.location.as_str() {
             "path" => ParameterLocation::Path,
             "query" => ParameterLocation::Query,
             "header" => ParameterLocation::Header,
@@ -165,16 +188,16 @@ impl OperationExtractor {
         };
 
         // Resolve schema if it contains $ref
-        let schema = param.schema.as_ref().map(|s| resolver.resolve(s));
+        let schema = resolved_param.schema.as_ref().map(|s| resolver.resolve(s));
 
         Some(OperationParameter {
-            name: param.name.clone(),
+            name: resolved_param.name.clone(),
             location,
-            required: param.required || location == ParameterLocation::Path,
-            description: param.description.clone(),
+            required: resolved_param.required || location == ParameterLocation::Path,
+            description: resolved_param.description.clone(),
             schema,
-            example: param.example.clone(),
-            deprecated: param.deprecated,
+            example: resolved_param.example.clone(),
+            deprecated: resolved_param.deprecated,
         })
     }
 
