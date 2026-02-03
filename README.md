@@ -212,4 +212,4 @@ Contributions welcome! Please open an issue or PR.
 
 ---
 
-Built by [Symbia Labs](https://symbia.io)
+Built by [Symbia Labs](https://www.symbia-labs.com)
