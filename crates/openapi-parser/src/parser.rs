@@ -342,7 +342,7 @@ components:
 
     #[tokio::test]
     async fn test_fetch_openai_spec() {
-        let url = "https://raw.githubusercontent.com/openai/openai-openapi/refs/heads/manual_spec/openapi.yaml";
+        let url = "https://app.stainless.com/api/spec/documented/openai/openapi.documented.yml";
         let result = OpenApiParser::fetch_and_parse(url).await;
 
         match &result {

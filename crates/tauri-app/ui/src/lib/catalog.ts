@@ -9,7 +9,7 @@ export const INTEGRATION_CATALOG: IntegrationDef[] = [
     description: "GPT-4, GPT-3.5, DALL-E, and Whisper APIs",
     category: "ai_models",
     icon: "openai",
-    specUrl: "https://raw.githubusercontent.com/openai/openai-openapi/refs/heads/manual_spec/openapi.yaml",
+    specUrl: "https://app.stainless.com/api/spec/documented/openai/openapi.documented.yml",
     authType: "bearer",
     docsUrl: "https://platform.openai.com/docs",
     tags: ["llm", "chat", "images", "audio"],
