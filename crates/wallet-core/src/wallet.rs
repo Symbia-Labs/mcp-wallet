@@ -9,7 +9,7 @@ use crate::error::{Result, WalletError};
 use crate::integration::IntegrationRegistry;
 use crate::session::{Session, SessionManager};
 use crate::settings::{SettingsManager, Settings, OtelSettings};
-use crate::storage::EncryptedFileStorage;
+use crate::storage::{EncryptedFileStorage, SecureStorage};
 
 /// Wallet state
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
