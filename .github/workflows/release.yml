@@ -1,4 +1,5 @@
 name: Release
+# Multi-platform build and release workflow
 
 on:
   push:
