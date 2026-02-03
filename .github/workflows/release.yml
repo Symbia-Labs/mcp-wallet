@@ -41,49 +41,41 @@ jobs:
           script: |
             const version = '${{ steps.get-version.outputs.version }}';
             const isPrerelease = version.includes('beta') || version.includes('alpha') || version.includes('rc');
+            const cleanVersion = version.replace('v', '');
+
+            const body = `## Symbia Labs MCP Wallet ${version}
+
+            ### Downloads
+
+            **Desktop Application:**
+            - macOS Apple Silicon: \`MCP-Wallet_${cleanVersion}_aarch64.dmg\`
+            - macOS Intel: \`MCP-Wallet_${cleanVersion}_x64.dmg\`
+            - Windows x64: \`MCP-Wallet_${cleanVersion}_x64-setup.exe\`
+            - Linux x64: \`MCP-Wallet_${cleanVersion}_amd64.deb\` or \`.AppImage\`
+
+            **CLI Server Only (headless):**
+            - macOS Apple Silicon: \`mcp-wallet-server-aarch64-apple-darwin\`
+            - macOS Intel: \`mcp-wallet-server-x86_64-apple-darwin\`
+            - Windows x64: \`mcp-wallet-server-x86_64-pc-windows-msvc.exe\`
+            - Linux x64: \`mcp-wallet-server-x86_64-unknown-linux-gnu\`
+
+            ### Installation
+
+            1. Download the appropriate file for your platform
+            2. Install/run the application
+            3. Create a wallet with a secure password
+            4. Add integrations and credentials
+            5. Configure Claude Desktop to use the MCP server
+
+            See [README.md](https://github.com/${{ github.repository }}/blob/main/README.md) for detailed instructions.
+            `;
 
             const { data } = await github.rest.repos.createRelease({
               owner: context.repo.owner,
               repo: context.repo.repo,
               tag_name: version,
               name: `MCP Wallet ${version}`,
-              body: `## Symbia Labs MCP Wallet ${version}
-
-### Downloads
-
-| Platform | Architecture | Download |
-|----------|-------------|----------|
-| macOS | Apple Silicon (M1/M2/M3) | \`MCP-Wallet_${version.replace('v', '')}_aarch64.dmg\` |
-| macOS | Intel | \`MCP-Wallet_${version.replace('v', '')}_x64.dmg\` |
-| Windows | x64 | \`MCP-Wallet_${version.replace('v', '')}_x64-setup.exe\` |
-| Linux | x64 | \`MCP-Wallet_${version.replace('v', '')}_amd64.deb\` |
-| Linux | x64 | \`MCP-Wallet_${version.replace('v', '')}_amd64.AppImage\` |
-
-### CLI Server Only
-
-For headless server usage (no GUI):
-
-| Platform | Architecture | Download |
-|----------|-------------|----------|
-| macOS | Apple Silicon | \`mcp-wallet-server-aarch64-apple-darwin\` |
-| macOS | Intel | \`mcp-wallet-server-x86_64-apple-darwin\` |
-| Windows | x64 | \`mcp-wallet-server-x86_64-pc-windows-msvc.exe\` |
-| Linux | x64 | \`mcp-wallet-server-x86_64-unknown-linux-gnu\` |
-
-### Installation
-
-1. Download the appropriate file for your platform
-2. Install/run the application
-3. Create a wallet with a secure password
-4. Add integrations and credentials
-5. Configure Claude Desktop to use the MCP server
-
-See [README.md](https://github.com/${{ github.repository }}/blob/main/README.md) for detailed instructions.
-
-### Changelog
-
-See full changelog in the repository.
-`,
+              body: body,
               draft: true,
               prerelease: isPrerelease
             });
