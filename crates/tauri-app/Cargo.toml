@@ -1,0 +1,36 @@
+[package]
+name = "mcp-wallet-app"
+version.workspace = true
+edition.workspace = true
+license.workspace = true
+authors.workspace = true
+description = "MCP Wallet desktop application"
+
+[[bin]]
+name = "mcp-wallet"
+path = "src/main.rs"
+
+[build-dependencies]
+tauri-build = { version = "2", features = [] }
+
+[dependencies]
+# Internal crates
+wallet-core.workspace = true
+mcp-server.workspace = true
+openapi-parser.workspace = true
+
+# Tauri
+tauri = { version = "2", features = [] }
+tauri-plugin-shell = "2"
+
+# Serialization
+serde.workspace = true
+serde_json.workspace = true
+
+# Async
+tokio.workspace = true
+
+# Utilities
+tracing.workspace = true
+tracing-subscriber.workspace = true
+uuid.workspace = true

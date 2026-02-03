@@ -1,0 +1,41 @@
+[package]
+name = "wallet-core"
+version.workspace = true
+edition.workspace = true
+license.workspace = true
+authors.workspace = true
+description = "Core wallet functionality for MCP Wallet - encryption, storage, and credential management"
+
+[dependencies]
+# Serialization
+serde.workspace = true
+serde_json.workspace = true
+
+# Async
+tokio.workspace = true
+async-trait.workspace = true
+
+# Crypto
+aes-gcm.workspace = true
+argon2.workspace = true
+rand.workspace = true
+hex.workspace = true
+
+# Security
+zeroize.workspace = true
+keyring.workspace = true
+
+# Utilities
+thiserror.workspace = true
+uuid.workspace = true
+chrono.workspace = true
+directories.workspace = true
+tracing.workspace = true
+base64 = "0.22"
+
+# Internal
+openapi-parser = { path = "../openapi-parser" }
+
+[dev-dependencies]
+tokio = { workspace = true, features = ["test-util"] }
+tempfile = "3"

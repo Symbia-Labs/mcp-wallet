@@ -1,0 +1,21 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512">
+  <defs>
+    <linearGradient id="bg" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" style="stop-color:#6366f1"/>
+      <stop offset="100%" style="stop-color:#8b5cf6"/>
+    </linearGradient>
+  </defs>
+  <rect width="512" height="512" rx="96" fill="url(#bg)"/>
+  <g fill="white">
+    <!-- Wallet shape -->
+    <rect x="96" y="160" width="320" height="224" rx="24" fill="white" opacity="0.9"/>
+    <rect x="96" y="160" width="320" height="64" rx="24" fill="white"/>
+    <!-- Lock icon -->
+    <circle cx="256" cy="296" r="40" fill="#6366f1"/>
+    <rect x="236" y="256" width="40" height="24" rx="8" fill="#6366f1"/>
+    <rect x="244" y="240" width="24" height="32" rx="12" fill="none" stroke="#6366f1" stroke-width="8"/>
+    <!-- Keyhole -->
+    <circle cx="256" cy="292" r="8" fill="white"/>
+    <rect x="252" y="292" width="8" height="16" fill="white"/>
+  </g>
+</svg>

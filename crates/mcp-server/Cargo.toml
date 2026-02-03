@@ -1,0 +1,44 @@
+[package]
+name = "mcp-server"
+version.workspace = true
+edition.workspace = true
+license.workspace = true
+authors.workspace = true
+description = "MCP protocol server for MCP Wallet - stdio and HTTP/SSE transports"
+
+[dependencies]
+# Internal crates
+wallet-core.workspace = true
+openapi-parser.workspace = true
+
+# Serialization
+serde.workspace = true
+serde_json.workspace = true
+
+# Async
+tokio.workspace = true
+tokio-stream = "0.1"
+async-stream = "0.3"
+async-trait.workspace = true
+futures.workspace = true
+
+# HTTP server
+axum.workspace = true
+tower.workspace = true
+tower-http.workspace = true
+reqwest.workspace = true
+
+# Utilities
+thiserror.workspace = true
+uuid.workspace = true
+tracing.workspace = true
+tracing-subscriber.workspace = true
+clap = { version = "4", features = ["derive", "env"] }
+rpassword = "7"
+
+[dev-dependencies]
+tokio = { workspace = true, features = ["test-util"] }
+
+[[bin]]
+name = "mcp-wallet-server"
+path = "src/bin/main.rs"

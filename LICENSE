@@ -1,0 +1,96 @@
+Symbia Labs MCP Wallet License
+Version 1.0, February 2026
+
+Copyright (c) 2026 Symbia Labs
+
+TERMS AND CONDITIONS
+
+1. DEFINITIONS
+
+"Software" means the Symbia Labs MCP Wallet software, including all source code,
+documentation, and associated files in this repository.
+
+"Commercial Use" means any use of the Software that is primarily intended for or
+directed toward commercial advantage or monetary compensation, including but not
+limited to: (a) selling, licensing, or distributing the Software or derivative
+works for a fee; (b) using the Software to provide commercial services to third
+parties; (c) embedding the Software in commercial products.
+
+"Personal Use" means use of the Software by an individual for non-commercial
+purposes, including personal projects, education, and research.
+
+"Internal Business Use" means use of the Software within an organization to
+manage that organization's own API credentials, without redistribution.
+
+2. GRANT OF RIGHTS
+
+Subject to the terms and conditions of this License, Symbia Labs grants you a
+non-exclusive, worldwide, royalty-free license to:
+
+a) Use the Software for Personal Use without restriction.
+
+b) Use the Software for Internal Business Use without restriction.
+
+c) Modify the Software and create derivative works for Personal Use or Internal
+   Business Use.
+
+d) Study the source code of the Software for educational purposes.
+
+3. RESTRICTIONS
+
+You may NOT:
+
+a) Sell, license, sublicense, or distribute the Software or any derivative works
+   to third parties without prior written permission from Symbia Labs.
+
+b) Offer the Software as a hosted service, managed service, or "software as a
+   service" to third parties without prior written permission from Symbia Labs.
+
+c) Remove or alter any copyright notices, license notices, or attribution
+   notices in the Software.
+
+d) Use the Symbia Labs name, logo, or trademarks without prior written permission,
+   except as required for reasonable attribution.
+
+4. CONTRIBUTIONS
+
+If you submit contributions (code, documentation, or other materials) to this
+repository, you grant Symbia Labs a perpetual, worldwide, non-exclusive,
+royalty-free, irrevocable license to use, reproduce, modify, distribute, and
+sublicense your contributions as part of the Software.
+
+5. NO WARRANTY
+
+THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY, FITNESS
+FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL SYMBIA LABS BE
+LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF
+CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE
+SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
+
+6. TERMINATION
+
+This License automatically terminates if you fail to comply with any of its
+terms. Upon termination, you must cease all use of the Software and destroy
+all copies in your possession.
+
+7. COMMERCIAL LICENSING
+
+For Commercial Use, including but not limited to redistribution, resale, or
+providing the Software as a service, please contact Symbia Labs at:
+
+  hello@symbia-labs.com
+
+Commercial licenses are available for organizations that wish to:
+- Redistribute the Software or derivative works
+- Offer the Software as part of a commercial service
+- Embed the Software in commercial products
+
+8. GOVERNING LAW
+
+This License shall be governed by the laws of the State of Delaware, United
+States, without regard to its conflict of law provisions.
+
+---
+
+For questions about this license, contact: hello@symbia-labs.com

@@ -1,0 +1,11 @@
+{
+  "$schema": "https://schema.tauri.app/config/2.0.0/schema.json",
+  "identifier": "default",
+  "description": "Default capabilities for MCP Wallet",
+  "windows": ["main"],
+  "permissions": [
+    "core:default",
+    "shell:allow-spawn",
+    "shell:allow-execute"
+  ]
+}
