@@ -66,6 +66,7 @@ edition.workspace = true
 [dependencies]
 wallet-core.workspace = true
 mcp-server.workspace = true
+openapi-parser.workspace = true
 tokio.workspace = true
 serde_json.workspace = true
 tempfile = "3"
@@ -77,3 +78,7 @@ path = "examples/demo.rs"
 [[example]]
 name = "mcp_test"
 path = "examples/mcp_test.rs"
+
+[[example]]
+name = "debug_openai"
+path = "examples/debug_openai.rs"

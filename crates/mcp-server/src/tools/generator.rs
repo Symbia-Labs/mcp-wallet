@@ -194,41 +194,99 @@ impl ToolGenerator {
         body: &openapi_parser::RequestBody,
     ) {
         if let Some(schema) = &body.schema {
-            if let Some(obj) = schema.as_object() {
-                // Merge properties from body schema
-                if let Some(body_props) = obj.get("properties").and_then(|p| p.as_object()) {
-                    for (key, value) in body_props {
-                        let mut prop = value.clone();
+            // Flatten the schema to get all properties (handles allOf/oneOf/anyOf)
+            let (flat_props, flat_required) = self.flatten_schema(schema);
 
-                        // Add "(body)" hint to description
-                        if let Some(obj) = prop.as_object_mut() {
-                            let desc = obj
-                                .get("description")
-                                .and_then(|v| v.as_str())
-                                .unwrap_or("");
-                            obj.insert(
-                                "description".to_string(),
-                                serde_json::json!(format!("{} (body)", desc).trim()),
-                            );
-                        }
+            for (key, value) in flat_props {
+                let mut prop = value.clone();
 
-                        let sanitized_key = sanitize_property_name(key);
-                        properties.insert(sanitized_key, prop);
-                    }
+                // Add "(body)" hint to description
+                if let Some(obj) = prop.as_object_mut() {
+                    let desc = obj
+                        .get("description")
+                        .and_then(|v| v.as_str())
+                        .unwrap_or("");
+                    obj.insert(
+                        "description".to_string(),
+                        serde_json::json!(format!("{} (body)", desc).trim()),
+                    );
                 }
 
-                // Add required fields from body
-                if body.required {
-                    if let Some(body_required) = obj.get("required").and_then(|r| r.as_array()) {
-                        for r in body_required {
-                            if let Some(s) = r.as_str() {
-                                let sanitized = sanitize_property_name(s);
-                                if !required.contains(&sanitized) {
-                                    required.push(sanitized);
-                                }
-                            }
-                        }
+                let sanitized_key = sanitize_property_name(&key);
+                properties.insert(sanitized_key, prop);
+            }
+
+            // Add required fields from body
+            if body.required {
+                for r in flat_required {
+                    let sanitized = sanitize_property_name(&r);
+                    if !required.contains(&sanitized) {
+                        required.push(sanitized);
                     }
+                }
+            }
+        }
+    }
+
+    /// Flatten a JSON schema, extracting all properties from allOf/oneOf/anyOf compositions
+    fn flatten_schema(&self, schema: &Value) -> (Map<String, Value>, Vec<String>) {
+        let mut properties = Map::new();
+        let mut required = Vec::new();
+
+        self.flatten_schema_recursive(schema, &mut properties, &mut required, 0);
+
+        (properties, required)
+    }
+
+    fn flatten_schema_recursive(
+        &self,
+        schema: &Value,
+        properties: &mut Map<String, Value>,
+        required: &mut Vec<String>,
+        depth: usize,
+    ) {
+        // Prevent infinite recursion
+        if depth > 10 {
+            return;
+        }
+
+        let obj = match schema.as_object() {
+            Some(o) => o,
+            None => return,
+        };
+
+        // Extract direct properties
+        if let Some(props) = obj.get("properties").and_then(|p| p.as_object()) {
+            for (key, value) in props {
+                if !properties.contains_key(key) {
+                    properties.insert(key.clone(), value.clone());
+                }
+            }
+        }
+
+        // Extract required fields
+        if let Some(req) = obj.get("required").and_then(|r| r.as_array()) {
+            for r in req {
+                if let Some(s) = r.as_str() {
+                    if !required.contains(&s.to_string()) {
+                        required.push(s.to_string());
+                    }
+                }
+            }
+        }
+
+        // Process allOf - merge all schemas
+        if let Some(all_of) = obj.get("allOf").and_then(|a| a.as_array()) {
+            for sub_schema in all_of {
+                self.flatten_schema_recursive(sub_schema, properties, required, depth + 1);
+            }
+        }
+
+        // Process oneOf/anyOf - take properties from all options (union)
+        for key in ["oneOf", "anyOf"] {
+            if let Some(variants) = obj.get(key).and_then(|a| a.as_array()) {
+                for sub_schema in variants {
+                    self.flatten_schema_recursive(sub_schema, properties, required, depth + 1);
                 }
             }
         }
