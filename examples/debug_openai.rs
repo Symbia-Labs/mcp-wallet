@@ -40,6 +40,19 @@ async fn main() {
                 println!("\nRequired: {:?}", required);
             }
 
+            // Print the actual JSON that MCP would return
+            println!("\n=== MCP Tool JSON (what Claude sees) ===");
+            let json = serde_json::to_string_pretty(&tool).unwrap();
+            // Just show first ~60 lines
+            for (i, line) in json.lines().enumerate() {
+                if i < 60 {
+                    println!("{}", line);
+                } else {
+                    println!("... (truncated, {} total lines)", json.lines().count());
+                    break;
+                }
+            }
+
             break;
         }
     }

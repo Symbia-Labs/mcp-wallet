@@ -166,6 +166,7 @@ impl ToolExecutor {
         request = request.header("Authorization", format!("Bearer {}", api_key));
 
         // Add body for POST/PUT/PATCH
+        let body_for_logging: Option<serde_json::Map<String, Value>>;
         if matches!(operation.method, HttpMethod::Post | HttpMethod::Put | HttpMethod::Patch) {
             // Collect body parameters (everything not in path/query/header)
             let mut body = serde_json::Map::new();
@@ -176,18 +177,32 @@ impl ToolExecutor {
                 .map(|p| p.name.as_str())
                 .collect();
 
+            debug!("Path/query/header params to exclude: {:?}", path_query_params);
+            debug!("Arguments received: {:?}", args_map.keys().collect::<Vec<_>>());
+
             for (key, value) in args_map {
                 if !path_query_params.contains(&key.as_str()) {
                     body.insert(key.clone(), value.clone());
+                } else {
+                    debug!("Excluding {} from body (it's a path/query/header param)", key);
                 }
             }
 
+            debug!("Final body keys: {:?}", body.keys().collect::<Vec<_>>());
+
             if !body.is_empty() {
+                info!("Request body: {}", serde_json::to_string(&body).unwrap_or_default());
                 request = request.json(&body);
+                body_for_logging = Some(body);
+            } else {
+                info!("WARNING: Request body is EMPTY!");
+                body_for_logging = None;
             }
+        } else {
+            body_for_logging = None;
         }
 
-        info!("Executing {} {}", method, url);
+        info!("Executing {} {} with body: {:?}", method, url, body_for_logging.as_ref().map(|b| b.keys().collect::<Vec<_>>()));
 
         // Execute request
         let response = request.send().await.map_err(|e| {

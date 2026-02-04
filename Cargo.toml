@@ -70,6 +70,7 @@ openapi-parser.workspace = true
 tokio.workspace = true
 serde_json.workspace = true
 tempfile = "3"
+reqwest.workspace = true
 
 [[example]]
 name = "demo"
@@ -86,3 +87,51 @@ path = "examples/debug_openai.rs"
 [[example]]
 name = "test_all_specs"
 path = "examples/test_all_specs.rs"
+
+[[example]]
+name = "test_openai_call"
+path = "examples/test_openai_call.rs"
+
+[[example]]
+name = "debug_request"
+path = "examples/debug_request.rs"
+
+[[example]]
+name = "dump_operations"
+path = "examples/dump_operations.rs"
+
+[[example]]
+name = "debug_full_flow"
+path = "examples/debug_full_flow.rs"
+
+[[example]]
+name = "mcp_protocol_test"
+path = "examples/mcp_protocol_test.rs"
+
+[[example]]
+name = "check_model_schema"
+path = "examples/check_model_schema.rs"
+
+[[example]]
+name = "trace_request"
+path = "examples/trace_request.rs"
+
+[[example]]
+name = "test_persistence"
+path = "examples/test_persistence.rs"
+
+[[example]]
+name = "test_responses_api"
+path = "examples/test_responses_api.rs"
+
+[[example]]
+name = "debug_responses_schema"
+path = "examples/debug_responses_schema.rs"
+
+[[example]]
+name = "deep_schema_debug"
+path = "examples/deep_schema_debug.rs"
+
+[[example]]
+name = "test_responses_execution"
+path = "examples/test_responses_execution.rs"

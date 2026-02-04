@@ -497,14 +497,33 @@ async fn stop_server(state: State<'_, AppState>) -> Result<(), String> {
 
 #[tauri::command]
 fn get_executable_path() -> Result<String, String> {
-    // Return the path to the MCP server binary (not the Tauri app)
-    std::env::current_exe()
-        .map(|p| {
-            // The server binary is in the same directory as the app, named "mcp-wallet-server"
-            let dir = p.parent().unwrap_or(&p);
-            dir.join("mcp-wallet-server").to_string_lossy().to_string()
-        })
-        .map_err(|e| e.to_string())
+    // Return the path to the MCP server binary (bundled as sidecar)
+    let exe_dir = std::env::current_exe()
+        .map_err(|e| e.to_string())?
+        .parent()
+        .ok_or("Failed to get exe directory")?
+        .to_path_buf();
+
+    // Try different possible names for the sidecar binary
+    // Tauri may add the target triple suffix
+    let possible_names = [
+        "mcp-wallet-server",
+        "mcp-wallet-server-aarch64-apple-darwin",
+        "mcp-wallet-server-x86_64-apple-darwin",
+        "mcp-wallet-server-x86_64-unknown-linux-gnu",
+        "mcp-wallet-server-x86_64-pc-windows-msvc.exe",
+        "mcp-wallet-server.exe",
+    ];
+
+    for name in possible_names {
+        let path = exe_dir.join(name);
+        if path.exists() {
+            return Ok(path.to_string_lossy().to_string());
+        }
+    }
+
+    // Fallback to default name even if it doesn't exist
+    Ok(exe_dir.join("mcp-wallet-server").to_string_lossy().to_string())
 }
 
 // ============================================================================

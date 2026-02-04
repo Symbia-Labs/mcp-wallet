@@ -633,8 +633,11 @@ export default function SettingsPage() {
 
       {/* Version Info */}
       <div className="text-center text-sm text-gray-600">
-        <p>Symbia Labs MCP Wallet v0.1.0</p>
-        <p className="mt-1">
+        <p>Symbia Labs MCP Wallet v0.1.6-beta</p>
+        <p className="mt-1 text-xs text-gray-700 font-mono break-all px-4">
+          Server: {executablePath}
+        </p>
+        <p className="mt-2">
           Built with Tauri + React + Rust
         </p>
         <p className="mt-3 text-gray-700">

@@ -137,15 +137,15 @@ jobs:
       - name: Install Tauri CLI
         run: cargo install tauri-cli
 
-      - name: Build Tauri app
+      - name: Build CLI server (must be built before Tauri for sidecar bundling)
+        run: cargo build --release --package mcp-server --target ${{ matrix.target }}
+
+      - name: Build Tauri app (bundles CLI server as sidecar)
         working-directory: crates/tauri-app
         run: cargo tauri build --target ${{ matrix.target }}
         env:
           TAURI_SIGNING_PRIVATE_KEY: ${{ secrets.TAURI_SIGNING_PRIVATE_KEY }}
           TAURI_SIGNING_PRIVATE_KEY_PASSWORD: ${{ secrets.TAURI_SIGNING_PRIVATE_KEY_PASSWORD }}
-
-      - name: Build CLI server
-        run: cargo build --release --package mcp-server --target ${{ matrix.target }}
 
       - name: Prepare artifacts (macOS)
         if: matrix.platform == 'macos-latest'
