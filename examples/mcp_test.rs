@@ -2,10 +2,10 @@
 //!
 //! Run with: cargo run --example mcp_test
 
+use mcp_server::protocol::{McpMessage, RequestHandler};
 use std::sync::Arc;
 use tokio::sync::RwLock;
-use wallet_core::{Wallet, EncryptedFileStorage};
-use mcp_server::protocol::{McpMessage, RequestHandler};
+use wallet_core::{EncryptedFileStorage, Wallet};
 
 const TEST_SPEC: &str = r#"
 openapi: "3.0.0"
@@ -49,25 +49,33 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
 
     // Setup wallet with test data
     let temp_dir = tempfile::TempDir::new()?;
-    let storage = Arc::new(
-        EncryptedFileStorage::with_dir(temp_dir.path().to_path_buf())?
-    );
+    let storage = Arc::new(EncryptedFileStorage::with_dir(
+        temp_dir.path().to_path_buf(),
+    )?);
     let mut wallet = Wallet::with_storage(storage);
 
     println!("Setting up test wallet...");
     wallet.initialize("test-password").await?;
 
     // Add integration
-    let integration = wallet.integrations
+    let integration = wallet
+        .integrations
         .add_from_content("weather", TEST_SPEC)
         .await?;
-    println!("  Added integration: {} ({} operations)", integration.name, integration.operation_count);
+    println!(
+        "  Added integration: {} ({} operations)",
+        integration.name, integration.operation_count
+    );
 
     // Add credential
-    let cred = wallet.credentials
+    let cred = wallet
+        .credentials
         .add_api_key("weather", "Weather API Key", "wk_live_abc123")
         .await?;
-    wallet.integrations.set_credential("weather", cred.id).await?;
+    wallet
+        .integrations
+        .set_credential("weather", cred.id)
+        .await?;
     println!("  Added and bound credential\n");
 
     // Create MCP handler

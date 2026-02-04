@@ -1,14 +1,14 @@
 //! Main wallet orchestration
 
 use std::sync::Arc;
-use tracing::{info, debug};
+use tracing::{debug, info};
 
-use crate::crypto::{derive_key, generate_salt, MasterKey, KeyDerivationParams};
 use crate::credential::CredentialManager;
+use crate::crypto::{derive_key, generate_salt, MasterKey};
 use crate::error::{Result, WalletError};
 use crate::integration::IntegrationRegistry;
 use crate::session::{Session, SessionManager};
-use crate::settings::{SettingsManager, Settings, OtelSettings};
+use crate::settings::{OtelSettings, Settings, SettingsManager};
 use crate::storage::{EncryptedFileStorage, SecureStorage};
 
 /// Wallet state
@@ -123,7 +123,9 @@ impl Wallet {
         self.storage.save_verification().await?;
 
         // Set master key for credentials and store locally
-        self.credentials.set_master_key(Some(master_key.clone())).await;
+        self.credentials
+            .set_master_key(Some(master_key.clone()))
+            .await;
         self.master_key = Some(master_key);
 
         self.state = WalletState::Unlocked;
@@ -144,7 +146,10 @@ impl Wallet {
         }
 
         // Load salt and derive key
-        let salt = self.storage.load_salt().await?
+        let salt = self
+            .storage
+            .load_salt()
+            .await?
             .ok_or(WalletError::WalletNotInitialized)?;
 
         let master_key = derive_key(password, &salt, None)?;
@@ -161,7 +166,9 @@ impl Wallet {
         self.storage.load().await?;
 
         // Set master key for credentials and store locally
-        self.credentials.set_master_key(Some(master_key.clone())).await;
+        self.credentials
+            .set_master_key(Some(master_key.clone()))
+            .await;
         self.master_key = Some(master_key);
 
         // Load integrations
@@ -185,7 +192,10 @@ impl Wallet {
         }
 
         // Load session
-        let session = self.session_manager.load_session().await?
+        let session = self
+            .session_manager
+            .load_session()
+            .await?
             .ok_or(WalletError::InvalidSession)?;
 
         // Get master key from session
@@ -203,7 +213,9 @@ impl Wallet {
         self.storage.load().await?;
 
         // Set master key for credentials and store locally
-        self.credentials.set_master_key(Some(master_key.clone())).await;
+        self.credentials
+            .set_master_key(Some(master_key.clone()))
+            .await;
         self.master_key = Some(master_key);
 
         // Load integrations
@@ -221,24 +233,23 @@ impl Wallet {
             return Err(WalletError::WalletLocked);
         }
 
-        let master_key = self.master_key.as_ref()
-            .ok_or(WalletError::WalletLocked)?;
+        let master_key = self.master_key.as_ref().ok_or(WalletError::WalletLocked)?;
 
         let session = Session::create(master_key, duration_secs)?;
         let token = session.token.clone();
 
         self.session_manager.save_session(&session).await?;
 
-        info!("Created session token (expires in {} seconds)", session.remaining_secs());
+        info!(
+            "Created session token (expires in {} seconds)",
+            session.remaining_secs()
+        );
         Ok(token)
     }
 
     /// Check if a valid session exists
     pub async fn has_valid_session(&self) -> bool {
-        match self.session_manager.load_session().await {
-            Ok(Some(_)) => true,
-            _ => false,
-        }
+        matches!(self.session_manager.load_session().await, Ok(Some(_)))
     }
 
     /// Clear the current session
@@ -298,7 +309,10 @@ impl Wallet {
         }
 
         // Verify old password
-        let salt = self.storage.load_salt().await?
+        let salt = self
+            .storage
+            .load_salt()
+            .await?
             .ok_or(WalletError::WalletNotInitialized)?;
 
         let old_key = derive_key(old_password, &salt, None)?;
@@ -369,14 +383,13 @@ impl Wallet {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use tempfile::TempDir;
     use std::path::PathBuf;
+    use tempfile::TempDir;
 
     async fn test_wallet() -> (Wallet, TempDir) {
         let temp_dir = TempDir::new().unwrap();
-        let storage = Arc::new(
-            EncryptedFileStorage::with_dir(temp_dir.path().to_path_buf()).unwrap()
-        );
+        let storage =
+            Arc::new(EncryptedFileStorage::with_dir(temp_dir.path().to_path_buf()).unwrap());
         let wallet = Wallet::with_storage(storage);
         (wallet, temp_dir)
     }
@@ -416,7 +429,10 @@ mod tests {
         wallet.lock().await.unwrap();
 
         wallet.unlock("old-password").await.unwrap();
-        wallet.change_password("old-password", "new-password").await.unwrap();
+        wallet
+            .change_password("old-password", "new-password")
+            .await
+            .unwrap();
         wallet.lock().await.unwrap();
 
         // Old password should fail

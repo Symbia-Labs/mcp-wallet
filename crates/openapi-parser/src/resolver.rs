@@ -66,8 +66,7 @@ impl<'a> SchemaResolver<'a> {
     fn resolve_ref(&self, ref_str: &str) -> Option<Value> {
         // Parse refs like "#/components/schemas/CreateChatCompletionRequest"
         const PREFIX: &str = "#/components/schemas/";
-        if ref_str.starts_with(PREFIX) {
-            let schema_name = &ref_str[PREFIX.len()..];
+        if let Some(schema_name) = ref_str.strip_prefix(PREFIX) {
             self.schemas.get(schema_name).cloned()
         } else {
             None

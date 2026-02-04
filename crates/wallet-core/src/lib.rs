@@ -6,20 +6,22 @@
 //! - Integration registry for OpenAPI-based services
 //! - Credential management with zeroize-on-drop security
 
-pub mod crypto;
-pub mod storage;
-pub mod integration;
 pub mod credential;
+pub mod crypto;
 pub mod error;
+pub mod integration;
 pub mod session;
 pub mod settings;
+pub mod storage;
 mod wallet;
 
-pub use error::{WalletError, Result};
-pub use wallet::{Wallet, WalletState};
-pub use crypto::{MasterKey, encrypt, decrypt, encrypt_string, decrypt_string, generate_salt};
-pub use storage::{SecureStorage, KeychainStorage, EncryptedFileStorage};
-pub use integration::{Integration, IntegrationRegistry, IntegrationOperation, IntegrationStatus, StoredIntegration};
-pub use credential::{Credential, CredentialManager, DecryptedCredential, CredentialType};
+pub use credential::{Credential, CredentialManager, CredentialType, DecryptedCredential};
+pub use crypto::{decrypt, decrypt_string, encrypt, encrypt_string, generate_salt, MasterKey};
+pub use error::{Result, WalletError};
+pub use integration::{
+    Integration, IntegrationOperation, IntegrationRegistry, IntegrationStatus, StoredIntegration,
+};
 pub use session::{Session, SessionManager};
-pub use settings::{Settings, SettingsManager, OtelSettings};
+pub use settings::{OtelSettings, Settings, SettingsManager};
+pub use storage::{EncryptedFileStorage, KeychainStorage, SecureStorage};
+pub use wallet::{Wallet, WalletState};

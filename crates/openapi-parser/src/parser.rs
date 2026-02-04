@@ -46,7 +46,10 @@ impl OpenApiParser {
     fn sanitize_large_numbers(content: &str) -> String {
         // Replace any integer that's too large for safe JSON parsing (> 15 digits)
         // These are typically used for min/max constraints and the exact value doesn't matter
-        let re_large = Regex::new(r"(?m)^(\s*(?:minimum|maximum|exclusiveMinimum|exclusiveMaximum):\s*)(-?\d{16,})").unwrap();
+        let re_large = Regex::new(
+            r"(?m)^(\s*(?:minimum|maximum|exclusiveMinimum|exclusiveMaximum):\s*)(-?\d{16,})",
+        )
+        .unwrap();
         let content = re_large.replace_all(content, |caps: &regex::Captures| {
             let prefix = &caps[1];
             let num_str = &caps[2];
@@ -185,9 +188,12 @@ impl OpenApiParser {
                 bearer_format: raw.bearer_format.clone(),
             }),
             "oauth2" => {
-                let flows = raw.flows.as_ref().map(Self::convert_oauth2_flows)
+                let flows = raw
+                    .flows
+                    .as_ref()
+                    .map(Self::convert_oauth2_flows)
                     .unwrap_or_default();
-                Some(SecurityScheme::OAuth2 { flows })
+                Some(SecurityScheme::OAuth2 { flows: Box::new(flows) })
             }
             "openIdConnect" => Some(SecurityScheme::OpenIdConnect {
                 openid_connect_url: raw.openid_connect_url.clone().unwrap_or_default(),
@@ -198,10 +204,16 @@ impl OpenApiParser {
 
     fn convert_oauth2_flows(raw: &RawOAuth2Flows) -> OAuth2Flows {
         OAuth2Flows {
-            authorization_code: raw.authorization_code.as_ref().map(Self::convert_oauth2_flow),
+            authorization_code: raw
+                .authorization_code
+                .as_ref()
+                .map(Self::convert_oauth2_flow),
             implicit: raw.implicit.as_ref().map(Self::convert_oauth2_flow),
             password: raw.password.as_ref().map(Self::convert_oauth2_flow),
-            client_credentials: raw.client_credentials.as_ref().map(Self::convert_oauth2_flow),
+            client_credentials: raw
+                .client_credentials
+                .as_ref()
+                .map(Self::convert_oauth2_flow),
         }
     }
 
@@ -286,19 +298,25 @@ security:
     fn test_parse_extracts_operations() {
         let spec = OpenApiParser::parse_yaml(SAMPLE_SPEC).unwrap();
 
-        let list_users = spec.operations.iter()
+        let list_users = spec
+            .operations
+            .iter()
             .find(|op| op.operation_id == "listUsers")
             .unwrap();
         assert_eq!(list_users.method, HttpMethod::Get);
         assert_eq!(list_users.path, "/users");
 
-        let create_user = spec.operations.iter()
+        let create_user = spec
+            .operations
+            .iter()
             .find(|op| op.operation_id == "createUser")
             .unwrap();
         assert_eq!(create_user.method, HttpMethod::Post);
         assert!(create_user.request_body.is_some());
 
-        let get_user = spec.operations.iter()
+        let get_user = spec
+            .operations
+            .iter()
             .find(|op| op.operation_id == "getUser")
             .unwrap();
         assert_eq!(get_user.parameters.len(), 1);
@@ -349,7 +367,10 @@ components:
             Ok(spec) => {
                 assert_eq!(spec.title, "OpenAI API");
                 assert!(!spec.operations.is_empty(), "Should have operations");
-                println!("Successfully parsed OpenAI spec with {} operations", spec.operations.len());
+                println!(
+                    "Successfully parsed OpenAI spec with {} operations",
+                    spec.operations.len()
+                );
             }
             Err(e) => {
                 panic!("Failed to parse OpenAI spec: {:?}", e);

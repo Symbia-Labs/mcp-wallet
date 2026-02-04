@@ -25,16 +25,19 @@ pub struct EncryptedData {
     pub ciphertext: Vec<u8>,
 }
 
-impl EncryptedData {
-    /// Serialize to the format: `{iv_hex}:{auth_tag_hex}:{ciphertext_hex}`
-    pub fn to_string(&self) -> String {
-        format!(
+impl std::fmt::Display for EncryptedData {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        write!(
+            f,
             "{}:{}:{}",
             hex::encode(self.iv),
             hex::encode(self.auth_tag),
             hex::encode(&self.ciphertext)
         )
     }
+}
+
+impl EncryptedData {
 
     /// Parse from the format: `{iv_hex}:{auth_tag_hex}:{ciphertext_hex}`
     pub fn from_string(s: &str) -> Result<Self> {

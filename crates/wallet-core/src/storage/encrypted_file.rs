@@ -10,10 +10,10 @@ use std::collections::HashMap;
 use std::path::PathBuf;
 use std::sync::Arc;
 use tokio::sync::RwLock;
-use tracing::{debug, error};
+use tracing::debug;
 
 use super::SecureStorage;
-use crate::crypto::{encrypt_string, decrypt_string, MasterKey};
+use crate::crypto::{decrypt_string, encrypt_string, MasterKey};
 use crate::error::{Result, WalletError};
 
 /// Encrypted file storage backend
@@ -75,7 +75,9 @@ impl EncryptedFileStorage {
     fn get_storage_dir() -> Result<PathBuf> {
         ProjectDirs::from("com", "symbia-labs", "mcp-wallet")
             .map(|dirs| dirs.data_dir().to_path_buf())
-            .ok_or_else(|| WalletError::StorageError("Could not determine data directory".to_string()))
+            .ok_or_else(|| {
+                WalletError::StorageError("Could not determine data directory".to_string())
+            })
     }
 
     /// Set the master key for encryption/decryption
@@ -172,8 +174,7 @@ impl EncryptedFileStorage {
     /// Save verification data (encrypted known plaintext)
     pub async fn save_verification(&self) -> Result<()> {
         let master_key = self.master_key.read().await;
-        let key = master_key.as_ref()
-            .ok_or(WalletError::WalletLocked)?;
+        let key = master_key.as_ref().ok_or(WalletError::WalletLocked)?;
 
         // Encrypt a known plaintext
         let verification = encrypt_string("mcp-wallet-verification", key)?;
@@ -195,8 +196,7 @@ impl EncryptedFileStorage {
         }
 
         let master_key = self.master_key.read().await;
-        let key = master_key.as_ref()
-            .ok_or(WalletError::WalletLocked)?;
+        let key = master_key.as_ref().ok_or(WalletError::WalletLocked)?;
 
         let encrypted = tokio::fs::read_to_string(&path).await?;
 
@@ -232,8 +232,7 @@ impl EncryptedFileStorage {
 impl SecureStorage for EncryptedFileStorage {
     async fn store(&self, key: &str, value: &[u8]) -> Result<()> {
         let master_key_guard = self.master_key.read().await;
-        let master_key = master_key_guard.as_ref()
-            .ok_or(WalletError::WalletLocked)?;
+        let master_key = master_key_guard.as_ref().ok_or(WalletError::WalletLocked)?;
 
         // Encrypt the value
         let value_str = String::from_utf8_lossy(value);
@@ -257,8 +256,7 @@ impl SecureStorage for EncryptedFileStorage {
 
     async fn retrieve(&self, key: &str) -> Result<Option<Vec<u8>>> {
         let master_key_guard = self.master_key.read().await;
-        let master_key = master_key_guard.as_ref()
-            .ok_or(WalletError::WalletLocked)?;
+        let master_key = master_key_guard.as_ref().ok_or(WalletError::WalletLocked)?;
 
         let cache = self.cache.read().await;
 
@@ -427,7 +425,10 @@ mod tests {
         {
             let storage = EncryptedFileStorage::with_dir(temp_dir.path().to_path_buf()).unwrap();
             storage.set_master_key(Some(key.clone())).await;
-            storage.store("persistent-key", b"persistent-value").await.unwrap();
+            storage
+                .store("persistent-key", b"persistent-value")
+                .await
+                .unwrap();
         }
 
         // Create new storage instance and verify data persists

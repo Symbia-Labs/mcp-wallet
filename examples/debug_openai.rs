@@ -1,6 +1,5 @@
-use openapi_parser::{OpenApiParser, NamespaceTree};
 use mcp_server::tools::ToolGenerator;
-use wallet_core::{Integration, StoredIntegration};
+use openapi_parser::OpenApiParser;
 
 #[tokio::main]
 async fn main() {

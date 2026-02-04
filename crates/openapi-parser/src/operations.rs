@@ -1,8 +1,8 @@
 //! Operation extraction from OpenAPI specs
 
-use crate::types::*;
 use crate::error::ParseResult;
 use crate::resolver::SchemaResolver;
+use crate::types::*;
 use indexmap::IndexMap;
 
 /// Extracts operations from raw OpenAPI spec structures
@@ -50,7 +50,15 @@ impl OperationExtractor {
 
             for (method, operation) in methods {
                 if let Some(op) = operation {
-                    let api_op = Self::extract_operation(path, method, op, &path_params, spec, &resolver, component_params)?;
+                    let api_op = Self::extract_operation(
+                        path,
+                        method,
+                        op,
+                        &path_params,
+                        spec,
+                        &resolver,
+                        component_params,
+                    )?;
                     operations.push(api_op);
                 }
             }
@@ -70,9 +78,10 @@ impl OperationExtractor {
         component_params: &IndexMap<String, RawParameter>,
     ) -> ParseResult<ApiOperation> {
         // Generate operation ID if not provided
-        let operation_id = operation.operation_id.clone().unwrap_or_else(|| {
-            Self::generate_operation_id(path, method)
-        });
+        let operation_id = operation
+            .operation_id
+            .clone()
+            .unwrap_or_else(|| Self::generate_operation_id(path, method));
 
         // Normalize operation ID (convert to dot notation)
         let normalized_id = Self::normalize_operation_id(&operation_id);
@@ -88,18 +97,16 @@ impl OperationExtractor {
         }
 
         // Extract request body with schema resolution
-        let request_body = operation.request_body.as_ref().and_then(|body| {
-            Self::extract_request_body(body, resolver)
-        });
+        let request_body = operation
+            .request_body
+            .as_ref()
+            .and_then(|body| Self::extract_request_body(body, resolver));
 
         // Extract responses
         let responses = Self::extract_responses(&operation.responses);
 
         // Extract security requirements
-        let security = Self::extract_security(
-            operation.security.as_ref(),
-            &spec.security,
-        );
+        let security = Self::extract_security(operation.security.as_ref(), &spec.security);
 
         Ok(ApiOperation {
             operation_id,
@@ -123,8 +130,7 @@ impl OperationExtractor {
         let path_part = path
             .trim_start_matches('/')
             .replace('/', "_")
-            .replace('{', "")
-            .replace('}', "");
+            .replace(['{', '}'], "");
 
         format!("{}_{}", method.as_str().to_lowercase(), path_part)
     }
@@ -166,8 +172,7 @@ impl OperationExtractor {
         let resolved_param = if let Some(ref_str) = &param.reference {
             // Parse refs like "#/components/parameters/pagination-before"
             const PREFIX: &str = "#/components/parameters/";
-            if ref_str.starts_with(PREFIX) {
-                let param_name = &ref_str[PREFIX.len()..];
+            if let Some(param_name) = ref_str.strip_prefix(PREFIX) {
                 component_params.get(param_name)?
             } else {
                 return None; // Unknown ref format
@@ -202,9 +207,14 @@ impl OperationExtractor {
     }
 
     /// Extract request body information
-    fn extract_request_body(body: &RawRequestBody, resolver: &SchemaResolver) -> Option<RequestBody> {
+    fn extract_request_body(
+        body: &RawRequestBody,
+        resolver: &SchemaResolver,
+    ) -> Option<RequestBody> {
         // Prefer JSON content type
-        let (content_type, media) = body.content.iter()
+        let (content_type, media) = body
+            .content
+            .iter()
             .find(|(ct, _)| ct.contains("json"))
             .or_else(|| body.content.first())?;
 
@@ -224,9 +234,12 @@ impl OperationExtractor {
         responses
             .iter()
             .map(|(status, response)| {
-                let (content_type, schema) = response.content.as_ref()
+                let (content_type, schema) = response
+                    .content
+                    .as_ref()
                     .and_then(|content| {
-                        content.iter()
+                        content
+                            .iter()
                             .find(|(ct, _)| ct.contains("json"))
                             .or_else(|| content.first())
                             .map(|(ct, media)| (Some(ct.clone()), media.schema.clone()))

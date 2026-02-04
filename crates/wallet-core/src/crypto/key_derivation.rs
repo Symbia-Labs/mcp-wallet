@@ -2,7 +2,7 @@
 
 use argon2::{
     password_hash::{PasswordHasher, SaltString},
-    Argon2, Algorithm, Params, Version,
+    Algorithm, Argon2, Params, Version,
 };
 use rand::rngs::OsRng;
 

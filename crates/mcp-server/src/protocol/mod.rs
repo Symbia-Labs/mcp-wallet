@@ -1,9 +1,9 @@
 //! MCP protocol types and handling
 
-mod types;
-mod handler;
 mod capabilities;
+mod handler;
+mod types;
 
-pub use types::*;
-pub use handler::RequestHandler;
 pub use capabilities::ServerCapabilities;
+pub use handler::RequestHandler;
+pub use types::*;

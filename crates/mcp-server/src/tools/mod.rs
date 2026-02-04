@@ -1,7 +1,7 @@
 //! Tool generation and execution
 
-mod generator;
 mod executor;
+mod generator;
 
-pub use generator::ToolGenerator;
 pub use executor::ToolExecutor;
+pub use generator::ToolGenerator;

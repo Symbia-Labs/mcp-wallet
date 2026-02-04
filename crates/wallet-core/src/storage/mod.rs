@@ -4,10 +4,10 @@
 //! 1. OS Keychain (hardware-backed where available)
 //! 2. Encrypted file (fallback)
 
-mod traits;
-mod keychain;
 mod encrypted_file;
+mod keychain;
+mod traits;
 
-pub use traits::SecureStorage;
-pub use keychain::KeychainStorage;
 pub use encrypted_file::EncryptedFileStorage;
+pub use keychain::KeychainStorage;
+pub use traits::SecureStorage;

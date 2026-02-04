@@ -1,7 +1,7 @@
 //! Credential management for secure API key storage
 
-mod types;
 mod manager;
+mod types;
 
-pub use types::*;
 pub use manager::CredentialManager;
+pub use types::*;

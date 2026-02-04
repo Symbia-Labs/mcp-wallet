@@ -61,8 +61,7 @@ impl KeychainStorage {
     /// Get a keyring entry for a key
     fn get_entry(&self, key: &str) -> Result<Entry> {
         let full_key = format!("{}{}", self.prefix, key);
-        Entry::new(SERVICE_NAME, &full_key)
-            .map_err(|e| WalletError::KeychainError(e.to_string()))
+        Entry::new(SERVICE_NAME, &full_key).map_err(|e| WalletError::KeychainError(e.to_string()))
     }
 
     /// Check if keychain is available
@@ -75,7 +74,9 @@ impl KeychainStorage {
 impl SecureStorage for KeychainStorage {
     async fn store(&self, key: &str, value: &[u8]) -> Result<()> {
         if !self.available {
-            return Err(WalletError::KeychainError("Keychain not available".to_string()));
+            return Err(WalletError::KeychainError(
+                "Keychain not available".to_string(),
+            ));
         }
 
         let entry = self.get_entry(key)?;
@@ -93,7 +94,9 @@ impl SecureStorage for KeychainStorage {
 
     async fn retrieve(&self, key: &str) -> Result<Option<Vec<u8>>> {
         if !self.available {
-            return Err(WalletError::KeychainError("Keychain not available".to_string()));
+            return Err(WalletError::KeychainError(
+                "Keychain not available".to_string(),
+            ));
         }
 
         let entry = self.get_entry(key)?;
@@ -114,7 +117,9 @@ impl SecureStorage for KeychainStorage {
 
     async fn delete(&self, key: &str) -> Result<()> {
         if !self.available {
-            return Err(WalletError::KeychainError("Keychain not available".to_string()));
+            return Err(WalletError::KeychainError(
+                "Keychain not available".to_string(),
+            ));
         }
 
         let entry = self.get_entry(key)?;
@@ -134,7 +139,9 @@ impl SecureStorage for KeychainStorage {
 
     async fn exists(&self, key: &str) -> Result<bool> {
         if !self.available {
-            return Err(WalletError::KeychainError("Keychain not available".to_string()));
+            return Err(WalletError::KeychainError(
+                "Keychain not available".to_string(),
+            ));
         }
 
         let entry = self.get_entry(key)?;

@@ -184,7 +184,9 @@ impl ToolCallResult {
 
     pub fn error(message: impl Into<String>) -> Self {
         Self {
-            content: vec![ToolContent::Text { text: message.into() }],
+            content: vec![ToolContent::Text {
+                text: message.into(),
+            }],
             is_error: Some(true),
         }
     }
@@ -194,9 +196,21 @@ impl ToolCallResult {
 #[derive(Debug, Clone, Serialize, Deserialize)]
 #[serde(tag = "type", rename_all = "lowercase")]
 pub enum ToolContent {
-    Text { text: String },
-    Image { data: String, #[serde(rename = "mimeType")] mime_type: String },
-    Resource { uri: String, #[serde(skip_serializing_if = "Option::is_none", rename = "mimeType")] mime_type: Option<String>, #[serde(skip_serializing_if = "Option::is_none")] text: Option<String> },
+    Text {
+        text: String,
+    },
+    Image {
+        data: String,
+        #[serde(rename = "mimeType")]
+        mime_type: String,
+    },
+    Resource {
+        uri: String,
+        #[serde(skip_serializing_if = "Option::is_none", rename = "mimeType")]
+        mime_type: Option<String>,
+        #[serde(skip_serializing_if = "Option::is_none")]
+        text: Option<String>,
+    },
 }
 
 /// Initialize request params

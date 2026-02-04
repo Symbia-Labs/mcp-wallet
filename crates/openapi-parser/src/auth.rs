@@ -9,9 +9,7 @@ pub enum AuthScheme {
     /// No authentication required
     None,
     /// Bearer token (Authorization: Bearer <token>)
-    Bearer {
-        format: Option<String>,
-    },
+    Bearer { format: Option<String> },
     /// API key in header, query, or cookie
     ApiKey {
         name: String,
@@ -77,15 +75,16 @@ impl AuthScheme {
                 name: name.clone(),
                 location: *location,
             },
-            SecurityScheme::Http { scheme, bearer_format } => {
-                match scheme.to_lowercase().as_str() {
-                    "bearer" => AuthScheme::Bearer {
-                        format: bearer_format.clone(),
-                    },
-                    "basic" => AuthScheme::Basic,
-                    _ => AuthScheme::Bearer { format: None },
-                }
-            }
+            SecurityScheme::Http {
+                scheme,
+                bearer_format,
+            } => match scheme.to_lowercase().as_str() {
+                "bearer" => AuthScheme::Bearer {
+                    format: bearer_format.clone(),
+                },
+                "basic" => AuthScheme::Basic,
+                _ => AuthScheme::Bearer { format: None },
+            },
             SecurityScheme::OAuth2 { flows } => {
                 // Prefer authorization_code flow
                 let (auth_url, token_url) = if let Some(flow) = &flows.authorization_code {

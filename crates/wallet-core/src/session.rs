@@ -3,13 +3,13 @@
 //! Allows the GUI app to create a session token that CLI processes can use
 //! to access the wallet without needing the master password.
 
-use std::path::PathBuf;
-use std::time::{SystemTime, UNIX_EPOCH};
 use rand::RngCore;
 use serde::{Deserialize, Serialize};
+use std::path::{Path, PathBuf};
+use std::time::{SystemTime, UNIX_EPOCH};
 use tracing::debug;
 
-use crate::crypto::{MasterKey, encrypt_string, decrypt_string};
+use crate::crypto::{decrypt_string, encrypt_string, MasterKey};
 use crate::error::{Result, WalletError};
 
 /// Session token for CLI access
@@ -36,7 +36,7 @@ impl Session {
         // Generate random 32-byte session token
         let mut token_bytes = [0u8; 32];
         rand::rngs::OsRng.fill_bytes(&mut token_bytes);
-        let token = hex::encode(&token_bytes); // 64 hex chars
+        let token = hex::encode(token_bytes); // 64 hex chars
 
         // Generate session ID
         let session_id = uuid::Uuid::new_v4().to_string();
@@ -86,15 +86,19 @@ impl Session {
         // Decrypt master key - decode hex token back to bytes
         let token_vec = hex::decode(token)
             .map_err(|e| WalletError::CryptoError(format!("Invalid token format: {}", e)))?;
-        let token_bytes: [u8; 32] = token_vec.as_slice().try_into()
+        let token_bytes: [u8; 32] = token_vec
+            .as_slice()
+            .try_into()
             .map_err(|_| WalletError::CryptoError("Invalid token length".to_string()))?;
         let token_key = MasterKey::new(token_bytes);
 
         let master_key_hex = decrypt_string(&self.encrypted_master_key, &token_key)?;
-        let master_key_bytes = hex::decode(&master_key_hex)
-            .map_err(|e| WalletError::CryptoError(e.to_string()))?;
+        let master_key_bytes =
+            hex::decode(&master_key_hex).map_err(|e| WalletError::CryptoError(e.to_string()))?;
 
-        let master_key_arr: [u8; 32] = master_key_bytes.as_slice().try_into()
+        let master_key_arr: [u8; 32] = master_key_bytes
+            .as_slice()
+            .try_into()
             .map_err(|_| WalletError::CryptoError("Invalid master key length".to_string()))?;
         let master_key = MasterKey::new(master_key_arr);
 
@@ -127,7 +131,7 @@ pub struct SessionManager {
 
 impl SessionManager {
     /// Create a new session manager for the given wallet directory
-    pub fn new(wallet_dir: &PathBuf) -> Self {
+    pub fn new(wallet_dir: &Path) -> Self {
         Self {
             session_file: wallet_dir.join("session.json"),
         }
@@ -151,8 +155,8 @@ impl SessionManager {
         }
 
         let json = tokio::fs::read_to_string(&self.session_file).await?;
-        let session: Session = serde_json::from_str(&json)
-            .map_err(|e| WalletError::StorageError(e.to_string()))?;
+        let session: Session =
+            serde_json::from_str(&json).map_err(|e| WalletError::StorageError(e.to_string()))?;
 
         // Check if expired
         if session.is_expired() {

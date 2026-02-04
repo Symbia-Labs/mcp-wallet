@@ -1,7 +1,7 @@
 //! Integration management for OpenAPI-based services
 
-mod types;
 mod registry;
+mod types;
 
-pub use types::*;
 pub use registry::IntegrationRegistry;
+pub use types::*;

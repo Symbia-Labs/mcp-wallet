@@ -3,8 +3,8 @@
 //! Stores non-sensitive configuration in a plain JSON file.
 //! Settings are accessible even when the wallet is locked.
 
-use std::path::{Path, PathBuf};
 use serde::{Deserialize, Serialize};
+use std::path::{Path, PathBuf};
 use tracing::debug;
 
 use crate::error::Result;
@@ -152,7 +152,8 @@ impl SettingsManager {
 
         // Delete settings file if it exists
         if self.settings_file.exists() {
-            tokio::fs::remove_file(&self.settings_file).await
+            tokio::fs::remove_file(&self.settings_file)
+                .await
                 .map_err(|e| crate::error::WalletError::StorageError(e.to_string()))?;
         }
 
@@ -193,7 +194,10 @@ mod tests {
             let manager = SettingsManager::new(temp_dir.path());
             assert_eq!(manager.get().auto_lock_timeout_minutes, 30);
             assert!(manager.get().otel.enabled);
-            assert_eq!(manager.get().otel.endpoint, Some("http://localhost:4317".to_string()));
+            assert_eq!(
+                manager.get().otel.endpoint,
+                Some("http://localhost:4317".to_string())
+            );
         }
     }
 
@@ -214,7 +218,10 @@ mod tests {
         manager.update_otel(otel.clone()).await.unwrap();
 
         assert!(manager.get_otel().enabled);
-        assert_eq!(manager.get_otel().endpoint, Some("https://otel.example.com:4317".to_string()));
+        assert_eq!(
+            manager.get_otel().endpoint,
+            Some("https://otel.example.com:4317".to_string())
+        );
         assert_eq!(manager.get_otel().effective_service_name(), "my-service");
     }
 }

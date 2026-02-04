@@ -5,8 +5,8 @@ use tokio::sync::RwLock;
 use tracing::{debug, info};
 use uuid::Uuid;
 
-use super::types::{Credential, CredentialType, DecryptedCredential, StoredCredential};
-use crate::crypto::{encrypt_string, decrypt_string, MasterKey};
+use super::types::{Credential, DecryptedCredential, StoredCredential};
+use crate::crypto::{decrypt_string, encrypt_string, MasterKey};
 use crate::error::{Result, WalletError};
 use crate::storage::SecureStorage;
 
@@ -58,7 +58,10 @@ impl CredentialManager {
 
         self.save_credential(&stored).await?;
 
-        info!("Added credential: {} ({})", credential.name, credential.provider);
+        info!(
+            "Added credential: {} ({})",
+            credential.name, credential.provider
+        );
         Ok(credential)
     }
 
@@ -90,7 +93,10 @@ impl CredentialManager {
 
         self.save_credential(&stored).await?;
 
-        info!("Added OAuth2 credential: {} ({})", credential.name, credential.provider);
+        info!(
+            "Added OAuth2 credential: {} ({})",
+            credential.name, credential.provider
+        );
         Ok(credential)
     }
 
@@ -114,7 +120,10 @@ impl CredentialManager {
 
         let storage_key = format!("{}{}", CREDENTIAL_PREFIX, id);
 
-        let data = self.storage.retrieve(&storage_key).await?
+        let data = self
+            .storage
+            .retrieve(&storage_key)
+            .await?
             .ok_or_else(|| WalletError::CredentialNotFound(id.to_string()))?;
 
         let stored: StoredCredential = serde_json::from_slice(&data)?;
@@ -164,7 +173,10 @@ impl CredentialManager {
 
         let storage_key = format!("{}{}", CREDENTIAL_PREFIX, id);
 
-        let data = self.storage.retrieve(&storage_key).await?
+        let data = self
+            .storage
+            .retrieve(&storage_key)
+            .await?
             .ok_or_else(|| WalletError::CredentialNotFound(id.to_string()))?;
 
         let mut stored: StoredCredential = serde_json::from_slice(&data)?;
@@ -210,8 +222,8 @@ impl CredentialManager {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::storage::EncryptedFileStorage;
     use crate::crypto::key_derivation::{derive_key, generate_salt};
+    use crate::storage::EncryptedFileStorage;
     use tempfile::TempDir;
 
     async fn test_manager() -> CredentialManager {
@@ -262,8 +274,14 @@ mod tests {
     async fn test_list_credentials() {
         let manager = test_manager().await;
 
-        manager.add_api_key("openai", "OpenAI", "key1").await.unwrap();
-        manager.add_api_key("anthropic", "Anthropic", "key2").await.unwrap();
+        manager
+            .add_api_key("openai", "OpenAI", "key1")
+            .await
+            .unwrap();
+        manager
+            .add_api_key("anthropic", "Anthropic", "key2")
+            .await
+            .unwrap();
 
         let creds = manager.list().await.unwrap();
         assert_eq!(creds.len(), 2);
@@ -284,9 +302,15 @@ mod tests {
     async fn test_update_value() {
         let manager = test_manager().await;
 
-        let cred = manager.add_api_key("test", "Test", "old-key").await.unwrap();
+        let cred = manager
+            .add_api_key("test", "Test", "old-key")
+            .await
+            .unwrap();
 
-        manager.update_value(cred.id, "new-key-12345678").await.unwrap();
+        manager
+            .update_value(cred.id, "new-key-12345678")
+            .await
+            .unwrap();
 
         let decrypted = manager.get_decrypted(cred.id).await.unwrap();
         assert_eq!(decrypted.expose(), "new-key-12345678");

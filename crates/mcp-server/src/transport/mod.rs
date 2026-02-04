@@ -1,7 +1,7 @@
 //! Transport implementations for MCP server
 
-mod stdio;
 mod http;
+mod stdio;
 
-pub use stdio::StdioTransport;
 pub use http::HttpTransport;
+pub use stdio::StdioTransport;

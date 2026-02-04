@@ -5,7 +5,7 @@ use tokio::io::{AsyncBufReadExt, AsyncWriteExt, BufReader};
 use tokio::sync::RwLock;
 use tracing::{debug, error, info};
 
-use crate::protocol::{McpMessage, McpError, RequestHandler};
+use crate::protocol::{McpError, McpMessage, RequestHandler};
 use wallet_core::Wallet;
 
 /// stdio transport for MCP protocol

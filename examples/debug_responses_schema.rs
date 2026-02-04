@@ -40,7 +40,8 @@ async fn main() {
                             }
 
                             // Check for properties in this item
-                            if let Some(props) = item.get("properties").and_then(|p| p.as_object()) {
+                            if let Some(props) = item.get("properties").and_then(|p| p.as_object())
+                            {
                                 println!("  properties: {} fields", props.len());
                                 for key in props.keys().take(5) {
                                     println!("    - {}", key);

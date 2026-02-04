@@ -4,22 +4,17 @@ use std::sync::Arc;
 use tokio::sync::RwLock;
 use tracing::info;
 
-use crate::transport::{StdioTransport, HttpTransport};
+use crate::transport::{HttpTransport, StdioTransport};
 use wallet_core::Wallet;
 
 /// Server mode
-#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Default)]
 pub enum ServerMode {
     /// stdio transport (for Claude Desktop)
+    #[default]
     Stdio,
     /// HTTP/SSE transport
     Http { port: u16 },
-}
-
-impl Default for ServerMode {
-    fn default() -> Self {
-        Self::Stdio
-    }
 }
 
 /// MCP server

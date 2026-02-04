@@ -3,16 +3,20 @@
 use mcp_server::tools::ToolExecutor;
 use serde_json::json;
 use std::sync::Arc;
-use tokio::sync::RwLock;
-use wallet_core::Wallet;
-use wallet_core::storage::EncryptedFileStorage;
 use tempfile::TempDir;
+use tokio::sync::RwLock;
+use wallet_core::storage::EncryptedFileStorage;
+use wallet_core::Wallet;
 
 #[tokio::main]
 async fn main() {
     // Get API key from environment
     let api_key = std::env::var("OPENAI_API_KEY").expect("OPENAI_API_KEY not set");
-    println!("API Key: {}...{}", &api_key[..7], &api_key[api_key.len()-4..]);
+    println!(
+        "API Key: {}...{}",
+        &api_key[..7],
+        &api_key[api_key.len() - 4..]
+    );
     println!("API Key length: {} chars", api_key.len());
 
     // Create a temporary wallet directory
@@ -21,16 +25,20 @@ async fn main() {
     // Create storage and wallet
     let storage = Arc::new(
         EncryptedFileStorage::with_dir(temp_dir.path().to_path_buf())
-            .expect("Failed to create storage")
+            .expect("Failed to create storage"),
     );
     let mut wallet = Wallet::with_storage(storage);
 
     // Initialize wallet
-    wallet.initialize("test-password").await.expect("Failed to initialize wallet");
+    wallet
+        .initialize("test-password")
+        .await
+        .expect("Failed to initialize wallet");
 
     // Add OpenAI integration
     let spec_url = "https://app.stainless.com/api/spec/documented/openai/openapi.documented.yml";
-    let integration = wallet.integrations
+    let integration = wallet
+        .integrations
         .add_from_url("openai", spec_url)
         .await
         .expect("Failed to add OpenAI integration");
@@ -53,10 +61,17 @@ async fn main() {
         println!("\n=== Looking up create_chat_completion ===");
 
         // Try different lookup patterns
-        let patterns = ["chat.completions.create", "create_chat_completion", "createChatCompletion"];
+        let patterns = [
+            "chat.completions.create",
+            "create_chat_completion",
+            "createChatCompletion",
+        ];
         for pattern in patterns {
             if let Some(op) = stored.lookup_operation(pattern) {
-                println!("Found with pattern '{}': {} {}", pattern, op.method, op.path);
+                println!(
+                    "Found with pattern '{}': {} {}",
+                    pattern, op.method, op.path
+                );
             } else {
                 println!("NOT FOUND with pattern '{}'", pattern);
             }
@@ -74,12 +89,14 @@ async fn main() {
     }
 
     // Add credential
-    let credential = wallet.credentials
+    let credential = wallet
+        .credentials
         .add_api_key("openai", "OpenAI API Key", &api_key)
         .await
         .expect("Failed to add credential");
 
-    wallet.integrations
+    wallet
+        .integrations
         .set_credential("openai", credential.id)
         .await
         .expect("Failed to bind credential");
@@ -115,7 +132,10 @@ async fn main() {
         ]
     });
 
-    match executor.execute("openai_create_chat_completion", Some(args)).await {
+    match executor
+        .execute("openai_create_chat_completion", Some(args))
+        .await
+    {
         Ok(result) => {
             println!("SUCCESS:");
             println!("{}", serde_json::to_string_pretty(&result).unwrap());

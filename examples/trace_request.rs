@@ -1,7 +1,7 @@
 //! Trace exactly what HTTP request is being built
 
-use openapi_parser::{OpenApiParser, HttpMethod};
-use serde_json::{json, Value, Map};
+use openapi_parser::OpenApiParser;
+use serde_json::{json, Map, Value};
 
 #[tokio::main]
 async fn main() {
@@ -57,7 +57,10 @@ async fn main() {
             if body.is_empty() {
                 println!("BODY IS EMPTY!");
             } else {
-                println!("{}", serde_json::to_string_pretty(&Value::Object(body)).unwrap());
+                println!(
+                    "{}",
+                    serde_json::to_string_pretty(&Value::Object(body)).unwrap()
+                );
             }
 
             // Check if operation has request_body
@@ -66,7 +69,10 @@ async fn main() {
                 println!("required: {}", rb.required);
                 println!("content_type: {}", rb.content_type);
                 if let Some(schema) = &rb.schema {
-                    println!("schema keys: {:?}", schema.as_object().map(|o| o.keys().collect::<Vec<_>>()));
+                    println!(
+                        "schema keys: {:?}",
+                        schema.as_object().map(|o| o.keys().collect::<Vec<_>>())
+                    );
                 } else {
                     println!("schema: None");
                 }

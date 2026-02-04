@@ -7,17 +7,17 @@
     windows_subsystem = "windows"
 )]
 
-use std::sync::Arc;
-use tokio::sync::RwLock;
 use serde::{Deserialize, Serialize};
+use std::sync::Arc;
 use tauri::State;
+use tokio::sync::RwLock;
 use uuid::Uuid;
 
-use wallet_core::{Wallet, WalletState as CoreWalletState};
-use wallet_core::integration::{Integration, IntegrationStatus};
-use wallet_core::credential::{Credential, CredentialType};
-use wallet_core::settings::OtelSettings;
 use mcp_server::ServerMode;
+use wallet_core::credential::{Credential, CredentialType};
+use wallet_core::integration::{Integration, IntegrationStatus};
+use wallet_core::settings::OtelSettings;
+use wallet_core::{Wallet, WalletState as CoreWalletState};
 
 /// Application state managed by Tauri
 pub struct AppState {
@@ -214,29 +214,32 @@ async fn get_wallet_state(state: State<'_, AppState>) -> Result<WalletStateRespo
 }
 
 #[tauri::command]
-async fn initialize_wallet(
-    password: String,
-    state: State<'_, AppState>,
-) -> Result<(), String> {
+async fn initialize_wallet(password: String, state: State<'_, AppState>) -> Result<(), String> {
     let mut wallet = state.wallet.write().await;
-    wallet.initialize(&password).await.map_err(|e| e.to_string())?;
+    wallet
+        .initialize(&password)
+        .await
+        .map_err(|e| e.to_string())?;
 
     // Create a session for CLI access (24 hour default)
-    wallet.create_session(None).await.map_err(|e| e.to_string())?;
+    wallet
+        .create_session(None)
+        .await
+        .map_err(|e| e.to_string())?;
 
     Ok(())
 }
 
 #[tauri::command]
-async fn unlock_wallet(
-    password: String,
-    state: State<'_, AppState>,
-) -> Result<(), String> {
+async fn unlock_wallet(password: String, state: State<'_, AppState>) -> Result<(), String> {
     let mut wallet = state.wallet.write().await;
     wallet.unlock(&password).await.map_err(|e| e.to_string())?;
 
     // Create a session for CLI access (24 hour default)
-    wallet.create_session(None).await.map_err(|e| e.to_string())?;
+    wallet
+        .create_session(None)
+        .await
+        .map_err(|e| e.to_string())?;
 
     Ok(())
 }
@@ -258,12 +261,13 @@ async fn reset_wallet(state: State<'_, AppState>) -> Result<(), String> {
 // ============================================================================
 
 #[tauri::command]
-async fn list_integrations(
-    state: State<'_, AppState>,
-) -> Result<Vec<IntegrationResponse>, String> {
+async fn list_integrations(state: State<'_, AppState>) -> Result<Vec<IntegrationResponse>, String> {
     let wallet = state.wallet.read().await;
     let integrations = wallet.integrations.list().await;
-    Ok(integrations.into_iter().map(IntegrationResponse::from).collect())
+    Ok(integrations
+        .into_iter()
+        .map(IntegrationResponse::from)
+        .collect())
 }
 
 #[tauri::command]
@@ -288,12 +292,13 @@ async fn add_integration(
 }
 
 #[tauri::command]
-async fn remove_integration(
-    key: String,
-    state: State<'_, AppState>,
-) -> Result<(), String> {
+async fn remove_integration(key: String, state: State<'_, AppState>) -> Result<(), String> {
     let wallet = state.wallet.read().await;
-    wallet.integrations.remove(&key).await.map_err(|e| e.to_string())
+    wallet
+        .integrations
+        .remove(&key)
+        .await
+        .map_err(|e| e.to_string())
 }
 
 #[tauri::command]
@@ -302,7 +307,11 @@ async fn sync_integration(
     state: State<'_, AppState>,
 ) -> Result<IntegrationResponse, String> {
     let wallet = state.wallet.read().await;
-    wallet.integrations.sync(&key).await.map_err(|e| e.to_string())?;
+    wallet
+        .integrations
+        .sync(&key)
+        .await
+        .map_err(|e| e.to_string())?;
 
     let integration = wallet
         .integrations
@@ -319,10 +328,7 @@ async fn get_operations(
     state: State<'_, AppState>,
 ) -> Result<Vec<OperationResponse>, String> {
     let wallet = state.wallet.read().await;
-    let operations = wallet
-        .integrations
-        .list_operations(&integration_key)
-        .await;
+    let operations = wallet.integrations.list_operations(&integration_key).await;
 
     Ok(operations
         .into_iter()
@@ -356,7 +362,8 @@ async fn get_operations(
                         };
 
                         // Extract type from schema if available
-                        let param_type = p.schema
+                        let param_type = p
+                            .schema
                             .as_ref()
                             .and_then(|s| s.get("type"))
                             .and_then(|t| t.as_str())
@@ -382,12 +389,13 @@ async fn get_operations(
 // ============================================================================
 
 #[tauri::command]
-async fn list_credentials(
-    state: State<'_, AppState>,
-) -> Result<Vec<CredentialResponse>, String> {
+async fn list_credentials(state: State<'_, AppState>) -> Result<Vec<CredentialResponse>, String> {
     let wallet = state.wallet.read().await;
     let credentials = wallet.credentials.list().await.map_err(|e| e.to_string())?;
-    Ok(credentials.into_iter().map(CredentialResponse::from).collect())
+    Ok(credentials
+        .into_iter()
+        .map(CredentialResponse::from)
+        .collect())
 }
 
 #[tauri::command]
@@ -407,13 +415,14 @@ async fn add_credential(
 }
 
 #[tauri::command]
-async fn delete_credential(
-    id: String,
-    state: State<'_, AppState>,
-) -> Result<(), String> {
+async fn delete_credential(id: String, state: State<'_, AppState>) -> Result<(), String> {
     let wallet = state.wallet.read().await;
     let uuid = Uuid::parse_str(&id).map_err(|e| e.to_string())?;
-    wallet.credentials.delete(uuid).await.map_err(|e| e.to_string())
+    wallet
+        .credentials
+        .delete(uuid)
+        .await
+        .map_err(|e| e.to_string())
 }
 
 #[tauri::command]
@@ -436,9 +445,7 @@ async fn bind_credential(
 // ============================================================================
 
 #[tauri::command]
-async fn get_server_status(
-    state: State<'_, AppState>,
-) -> Result<ServerStatusResponse, String> {
+async fn get_server_status(state: State<'_, AppState>) -> Result<ServerStatusResponse, String> {
     let server = state.server.read().await;
     match server.as_ref() {
         Some(handle) => Ok(ServerStatusResponse {
@@ -471,7 +478,9 @@ async fn start_server(
     let mut server = state.server.write().await;
 
     let server_mode = if mode == "http" {
-        ServerMode::Http { port: port.unwrap_or(3000) }
+        ServerMode::Http {
+            port: port.unwrap_or(3000),
+        }
     } else {
         ServerMode::Stdio
     };
@@ -523,7 +532,10 @@ fn get_executable_path() -> Result<String, String> {
     }
 
     // Fallback to default name even if it doesn't exist
-    Ok(exe_dir.join("mcp-wallet-server").to_string_lossy().to_string())
+    Ok(exe_dir
+        .join("mcp-wallet-server")
+        .to_string_lossy()
+        .to_string())
 }
 
 // ============================================================================
@@ -531,11 +543,11 @@ fn get_executable_path() -> Result<String, String> {
 // ============================================================================
 
 #[tauri::command]
-async fn get_otel_settings(
-    state: State<'_, AppState>,
-) -> Result<OtelSettingsResponse, String> {
+async fn get_otel_settings(state: State<'_, AppState>) -> Result<OtelSettingsResponse, String> {
     let wallet = state.wallet.read().await;
-    Ok(OtelSettingsResponse::from(wallet.get_otel_settings().clone()))
+    Ok(OtelSettingsResponse::from(
+        wallet.get_otel_settings().clone(),
+    ))
 }
 
 #[tauri::command]
@@ -544,26 +556,23 @@ async fn update_otel_settings(
     state: State<'_, AppState>,
 ) -> Result<(), String> {
     let mut wallet = state.wallet.write().await;
-    wallet.update_otel_settings(OtelSettings::from(settings))
+    wallet
+        .update_otel_settings(OtelSettings::from(settings))
         .await
         .map_err(|e| e.to_string())
 }
 
 #[tauri::command]
-async fn get_auto_lock_timeout(
-    state: State<'_, AppState>,
-) -> Result<u32, String> {
+async fn get_auto_lock_timeout(state: State<'_, AppState>) -> Result<u32, String> {
     let wallet = state.wallet.read().await;
     Ok(wallet.get_auto_lock_timeout())
 }
 
 #[tauri::command]
-async fn set_auto_lock_timeout(
-    minutes: u32,
-    state: State<'_, AppState>,
-) -> Result<(), String> {
+async fn set_auto_lock_timeout(minutes: u32, state: State<'_, AppState>) -> Result<(), String> {
     let mut wallet = state.wallet.write().await;
-    wallet.set_auto_lock_timeout(minutes)
+    wallet
+        .set_auto_lock_timeout(minutes)
         .await
         .map_err(|e| e.to_string())
 }

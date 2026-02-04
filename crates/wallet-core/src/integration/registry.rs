@@ -9,7 +9,7 @@ use uuid::Uuid;
 use super::types::{Integration, IntegrationStatus, StoredIntegration};
 use crate::error::{Result, WalletError};
 use crate::storage::SecureStorage;
-use openapi_parser::{OpenApiParser, ApiOperation};
+use openapi_parser::{ApiOperation, OpenApiParser};
 
 /// Storage key prefix for integrations
 const INTEGRATION_PREFIX: &str = "integration:";
@@ -41,7 +41,8 @@ impl IntegrationRegistry {
             match self.storage.retrieve(&key).await? {
                 Some(data) => {
                     let stored: StoredIntegration = serde_json::from_slice(&data)?;
-                    let integration_key = key.strip_prefix(INTEGRATION_PREFIX)
+                    let integration_key = key
+                        .strip_prefix(INTEGRATION_PREFIX)
                         .unwrap_or(&key)
                         .to_string();
                     integrations.insert(integration_key, stored);
@@ -81,14 +82,10 @@ impl IntegrationRegistry {
     pub async fn add_from_content(&self, key: &str, content: &str) -> Result<Integration> {
         info!("Adding integration from content: {}", key);
 
-        let spec = OpenApiParser::parse(content)
-            .map_err(|e| WalletError::InvalidSpec(e.to_string()))?;
+        let spec =
+            OpenApiParser::parse(content).map_err(|e| WalletError::InvalidSpec(e.to_string()))?;
 
-        let stored = StoredIntegration::from_spec(
-            key.to_string(),
-            spec,
-            Some(content.to_string()),
-        );
+        let stored = StoredIntegration::from_spec(key.to_string(), spec, Some(content.to_string()));
 
         self.save_integration(&stored).await?;
 
@@ -128,7 +125,10 @@ impl IntegrationRegistry {
     /// List all integrations
     pub async fn list(&self) -> Vec<Integration> {
         let integrations = self.integrations.read().await;
-        integrations.values().map(|s| s.integration.clone()).collect()
+        integrations
+            .values()
+            .map(|s| s.integration.clone())
+            .collect()
     }
 
     /// Update integration status
@@ -141,7 +141,8 @@ impl IntegrationRegistry {
 
             // Persist
             drop(integrations);
-            self.save_integration(&self.integrations.read().await.get(key).unwrap()).await?;
+            self.save_integration(self.integrations.read().await.get(key).unwrap())
+                .await?;
         }
 
         Ok(())
@@ -217,9 +218,8 @@ impl IntegrationRegistry {
                 .and_then(|s| s.integration.spec_url.clone())
         };
 
-        let spec_url = spec_url.ok_or_else(|| {
-            WalletError::IntegrationNotFound(format!("{} has no spec URL", key))
-        })?;
+        let spec_url = spec_url
+            .ok_or_else(|| WalletError::IntegrationNotFound(format!("{} has no spec URL", key)))?;
 
         info!("Syncing integration: {} from {}", key, spec_url);
 
@@ -257,8 +257,8 @@ impl IntegrationRegistry {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::storage::EncryptedFileStorage;
     use crate::crypto::key_derivation::{derive_key, generate_salt};
+    use crate::storage::EncryptedFileStorage;
     use tempfile::TempDir;
 
     async fn test_registry() -> IntegrationRegistry {

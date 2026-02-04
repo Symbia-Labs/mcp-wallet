@@ -27,17 +27,26 @@ async fn main() {
                 println!("  required: {}", body.required);
                 println!("  content_type: {}", body.content_type);
                 if let Some(schema) = &body.schema {
-                    let keys: Vec<_> = schema.as_object().map(|o| o.keys().collect()).unwrap_or_default();
+                    let keys: Vec<_> = schema
+                        .as_object()
+                        .map(|o| o.keys().collect())
+                        .unwrap_or_default();
                     println!("  schema top-level keys: {:?}", keys);
 
                     // Check if it has allOf
                     if let Some(all_of) = schema.get("allOf") {
-                        println!("  has allOf with {} items", all_of.as_array().map(|a| a.len()).unwrap_or(0));
+                        println!(
+                            "  has allOf with {} items",
+                            all_of.as_array().map(|a| a.len()).unwrap_or(0)
+                        );
                     }
 
                     // Check if it has direct properties
                     if let Some(props) = schema.get("properties") {
-                        println!("  has direct properties: {}", props.as_object().map(|o| o.len()).unwrap_or(0));
+                        println!(
+                            "  has direct properties: {}",
+                            props.as_object().map(|o| o.len()).unwrap_or(0)
+                        );
                     }
                 } else {
                     println!("  schema: None!");

@@ -9,6 +9,6 @@ mod encryption;
 mod key_derivation;
 mod secure_memory;
 
-pub use encryption::{encrypt, decrypt, encrypt_string, decrypt_string, EncryptedData};
+pub use encryption::{decrypt, decrypt_string, encrypt, encrypt_string, EncryptedData};
 pub use key_derivation::{derive_key, generate_salt, KeyDerivationParams};
 pub use secure_memory::{MasterKey, SecretString};

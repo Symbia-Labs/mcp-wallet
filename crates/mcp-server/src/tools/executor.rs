@@ -1,6 +1,6 @@
 //! Execute MCP tools by making HTTP requests
 
-use openapi_parser::{ApiOperation, ParameterLocation, HttpMethod};
+use openapi_parser::{ApiOperation, HttpMethod, ParameterLocation};
 use reqwest::Client;
 use serde_json::Value;
 use std::sync::Arc;
@@ -62,10 +62,12 @@ impl ToolExecutor {
             .ok_or_else(|| WalletError::OperationNotFound(operation_path.clone()))?;
 
         // Get credential
-        let credential_id = stored.integration.credential_id
-            .ok_or_else(|| WalletError::CredentialNotFound(
-                format!("No credential for integration {}", integration_key)
-            ))?;
+        let credential_id = stored.integration.credential_id.ok_or_else(|| {
+            WalletError::CredentialNotFound(format!(
+                "No credential for integration {}",
+                integration_key
+            ))
+        })?;
 
         let decrypted = wallet.credentials.get_decrypted(credential_id).await?;
         let api_key = decrypted.expose().to_string();
@@ -75,7 +77,12 @@ impl ToolExecutor {
 
         // Build and execute request
         let result = self
-            .execute_operation(&stored.integration.server_url, operation, arguments, &api_key)
+            .execute_operation(
+                &stored.integration.server_url,
+                operation,
+                arguments,
+                &api_key,
+            )
             .await?;
 
         Ok(result)
@@ -109,9 +116,9 @@ impl ToolExecutor {
         api_key: &str,
     ) -> Result<ToolCallResult, WalletError> {
         let args = arguments.unwrap_or(Value::Object(serde_json::Map::new()));
-        let args_map = args.as_object().ok_or_else(|| {
-            WalletError::ParseError("Arguments must be an object".to_string())
-        })?;
+        let args_map = args
+            .as_object()
+            .ok_or_else(|| WalletError::ParseError("Arguments must be an object".to_string()))?;
 
         // Build URL with path parameters substituted
         let mut url = format!("{}{}", base_url.trim_end_matches('/'), operation.path);
@@ -167,31 +174,53 @@ impl ToolExecutor {
 
         // Add body for POST/PUT/PATCH
         let body_for_logging: Option<serde_json::Map<String, Value>>;
-        if matches!(operation.method, HttpMethod::Post | HttpMethod::Put | HttpMethod::Patch) {
+        if matches!(
+            operation.method,
+            HttpMethod::Post | HttpMethod::Put | HttpMethod::Patch
+        ) {
             // Collect body parameters (everything not in path/query/header)
             let mut body = serde_json::Map::new();
             let path_query_params: Vec<&str> = operation
                 .parameters
                 .iter()
-                .filter(|p| matches!(p.location, ParameterLocation::Path | ParameterLocation::Query | ParameterLocation::Header))
+                .filter(|p| {
+                    matches!(
+                        p.location,
+                        ParameterLocation::Path
+                            | ParameterLocation::Query
+                            | ParameterLocation::Header
+                    )
+                })
                 .map(|p| p.name.as_str())
                 .collect();
 
-            debug!("Path/query/header params to exclude: {:?}", path_query_params);
-            debug!("Arguments received: {:?}", args_map.keys().collect::<Vec<_>>());
+            debug!(
+                "Path/query/header params to exclude: {:?}",
+                path_query_params
+            );
+            debug!(
+                "Arguments received: {:?}",
+                args_map.keys().collect::<Vec<_>>()
+            );
 
             for (key, value) in args_map {
                 if !path_query_params.contains(&key.as_str()) {
                     body.insert(key.clone(), value.clone());
                 } else {
-                    debug!("Excluding {} from body (it's a path/query/header param)", key);
+                    debug!(
+                        "Excluding {} from body (it's a path/query/header param)",
+                        key
+                    );
                 }
             }
 
             debug!("Final body keys: {:?}", body.keys().collect::<Vec<_>>());
 
             if !body.is_empty() {
-                info!("Request body: {}", serde_json::to_string(&body).unwrap_or_default());
+                info!(
+                    "Request body: {}",
+                    serde_json::to_string(&body).unwrap_or_default()
+                );
                 request = request.json(&body);
                 body_for_logging = Some(body);
             } else {
@@ -202,17 +231,26 @@ impl ToolExecutor {
             body_for_logging = None;
         }
 
-        info!("Executing {} {} with body: {:?}", method, url, body_for_logging.as_ref().map(|b| b.keys().collect::<Vec<_>>()));
+        info!(
+            "Executing {} {} with body: {:?}",
+            method,
+            url,
+            body_for_logging
+                .as_ref()
+                .map(|b| b.keys().collect::<Vec<_>>())
+        );
 
         // Execute request
-        let response = request.send().await.map_err(|e| {
-            WalletError::StorageError(format!("HTTP request failed: {}", e))
-        })?;
+        let response = request
+            .send()
+            .await
+            .map_err(|e| WalletError::StorageError(format!("HTTP request failed: {}", e)))?;
 
         let status = response.status();
-        let response_text = response.text().await.map_err(|e| {
-            WalletError::StorageError(format!("Failed to read response: {}", e))
-        })?;
+        let response_text = response
+            .text()
+            .await
+            .map_err(|e| WalletError::StorageError(format!("Failed to read response: {}", e)))?;
 
         debug!("Response status: {}", status);
 
@@ -240,16 +278,16 @@ mod tests {
 
     #[test]
     fn test_parse_tool_name() {
-        let wallet = Arc::new(RwLock::new(
-            Wallet::new().expect("Failed to create wallet")
-        ));
+        let wallet = Arc::new(RwLock::new(Wallet::new().expect("Failed to create wallet")));
         let executor = ToolExecutor::new(wallet);
 
         let (key, path) = executor.parse_tool_name("stripe_customers_create").unwrap();
         assert_eq!(key, "stripe");
         assert_eq!(path, "customers.create");
 
-        let (key, path) = executor.parse_tool_name("openai_chat_completions_create").unwrap();
+        let (key, path) = executor
+            .parse_tool_name("openai_chat_completions_create")
+            .unwrap();
         assert_eq!(key, "openai");
         assert_eq!(path, "chat.completions.create");
     }

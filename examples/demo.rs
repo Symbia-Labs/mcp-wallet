@@ -2,11 +2,10 @@
 //!
 //! Run with: cargo run --example demo
 
-use std::sync::Arc;
-use tokio::sync::RwLock;
-use wallet_core::{Wallet, WalletState};
-use mcp_server::protocol::{McpMessage, McpTool};
+use mcp_server::protocol::McpMessage;
 use mcp_server::tools::ToolGenerator;
+use std::sync::Arc;
+use wallet_core::Wallet;
 
 const TEST_SPEC: &str = r#"
 openapi: "3.0.0"
@@ -121,9 +120,9 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
 
     // Use a temporary directory for this demo
     let temp_dir = tempfile::TempDir::new()?;
-    let storage = Arc::new(
-        wallet_core::EncryptedFileStorage::with_dir(temp_dir.path().to_path_buf())?
-    );
+    let storage = Arc::new(wallet_core::EncryptedFileStorage::with_dir(
+        temp_dir.path().to_path_buf(),
+    )?);
     let mut wallet = Wallet::with_storage(storage);
 
     // Step 1: Initialize the wallet
@@ -133,25 +132,35 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
 
     // Step 2: Add an integration from OpenAPI spec
     println!("2. Adding integration from OpenAPI spec...");
-    let integration = wallet.integrations
+    let integration = wallet
+        .integrations
         .add_from_content("petstore", TEST_SPEC)
         .await?;
-    println!("   ✓ Integration added: {} ({})", integration.name, integration.key);
-    println!("   ✓ Operations discovered: {}\n", integration.operation_count);
+    println!(
+        "   ✓ Integration added: {} ({})",
+        integration.name, integration.key
+    );
+    println!(
+        "   ✓ Operations discovered: {}\n",
+        integration.operation_count
+    );
 
     // Step 3: Add a credential
     println!("3. Adding API credential...");
-    let credential = wallet.credentials
+    let credential = wallet
+        .credentials
         .add_api_key("petstore", "Demo API Key", "pk_demo_abc123xyz789")
         .await?;
-    println!("   ✓ Credential added: {} (prefix: {})\n",
+    println!(
+        "   ✓ Credential added: {} (prefix: {})\n",
         credential.name,
         credential.prefix.as_deref().unwrap_or("N/A")
     );
 
     // Step 4: Bind credential to integration
     println!("4. Binding credential to integration...");
-    wallet.integrations
+    wallet
+        .integrations
         .set_credential("petstore", credential.id)
         .await?;
     println!("   ✓ Credential bound to integration\n");
@@ -201,11 +210,17 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
             }
         })),
     );
-    println!("   → initialize request: {}", serde_json::to_string(&init_msg)?);
+    println!(
+        "   → initialize request: {}",
+        serde_json::to_string(&init_msg)?
+    );
 
     // Tools list request
     let tools_list_msg = McpMessage::request(2, "tools/list", None);
-    println!("   → tools/list request: {}", serde_json::to_string(&tools_list_msg)?);
+    println!(
+        "   → tools/list request: {}",
+        serde_json::to_string(&tools_list_msg)?
+    );
 
     // Tools call request
     let tools_call_msg = McpMessage::request(
@@ -219,7 +234,10 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
             }
         })),
     );
-    println!("   → tools/call request: {}", serde_json::to_string(&tools_call_msg)?);
+    println!(
+        "   → tools/call request: {}",
+        serde_json::to_string(&tools_call_msg)?
+    );
     println!();
 
     // Step 8: Lock and unlock wallet
@@ -234,7 +252,8 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
     println!("9. Verifying credential encryption/decryption:");
     let decrypted = wallet.credentials.get_decrypted(credential.id).await?;
     let exposed = decrypted.expose();
-    println!("   ✓ Decrypted credential: {}...{}",
+    println!(
+        "   ✓ Decrypted credential: {}...{}",
         &exposed[..8.min(exposed.len())],
         &exposed[exposed.len().saturating_sub(4)..]
     );
@@ -243,7 +262,10 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
     println!("=== Demo Complete ===");
     println!("\nThe MCP Wallet successfully:");
     println!("  • Initialized with password-derived encryption");
-    println!("  • Parsed OpenAPI spec and extracted {} operations", operations.len());
+    println!(
+        "  • Parsed OpenAPI spec and extracted {} operations",
+        operations.len()
+    );
     println!("  • Stored encrypted credential");
     println!("  • Generated {} MCP tools", tools.len());
     println!("  • Verified lock/unlock cycle");

@@ -7,13 +7,13 @@
 //! Simply unlock your wallet in the desktop app, and the CLI will automatically
 //! have access for 24 hours (no password needed in config files).
 
+use clap::Parser;
 use std::sync::Arc;
 use tokio::sync::RwLock;
-use clap::Parser;
 use tracing::info;
 
-use wallet_core::Wallet;
 use mcp_server::{McpServer, ServerMode};
+use wallet_core::Wallet;
 
 /// Symbia Labs MCP Wallet - Secure API credential manager with MCP protocol support
 #[derive(Parser, Debug)]
@@ -55,9 +55,7 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
     }
 
     // Create wallet instance (uses shared storage location)
-    let mut wallet = Wallet::new().map_err(|e| {
-        format!("Failed to initialize wallet: {}", e)
-    })?;
+    let mut wallet = Wallet::new().map_err(|e| format!("Failed to initialize wallet: {}", e))?;
 
     // Check if wallet is initialized
     if wallet.state() == wallet_core::WalletState::NotInitialized {
@@ -77,9 +75,10 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
     } else {
         // Session didn't work - try password fallback
         if let Some(password) = args.password {
-            wallet.unlock(&password).await.map_err(|e| {
-                format!("Failed to unlock wallet: {}", e)
-            })?;
+            wallet
+                .unlock(&password)
+                .await
+                .map_err(|e| format!("Failed to unlock wallet: {}", e))?;
 
             if !args.stdio {
                 info!("Wallet unlocked via password");
@@ -87,13 +86,16 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
         } else {
             // No session and no password
             if args.stdio {
-                return Err("No valid session. Please unlock the wallet in the desktop app first.".into());
+                return Err(
+                    "No valid session. Please unlock the wallet in the desktop app first.".into(),
+                );
             } else {
                 // Interactive mode - prompt for password
                 let password = rpassword::prompt_password("Wallet password: ")?;
-                wallet.unlock(&password).await.map_err(|e| {
-                    format!("Failed to unlock wallet: {}", e)
-                })?;
+                wallet
+                    .unlock(&password)
+                    .await
+                    .map_err(|e| format!("Failed to unlock wallet: {}", e))?;
                 info!("Wallet unlocked via password");
             }
         }

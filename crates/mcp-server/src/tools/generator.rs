@@ -1,9 +1,9 @@
 //! Generate MCP tools from OpenAPI operations
 
-use openapi_parser::{ApiOperation, ParameterLocation, HttpMethod};
+use crate::protocol::{McpInputSchema, McpTool};
+use openapi_parser::{ApiOperation, ParameterLocation};
+use serde_json::{Map, Value};
 use wallet_core::StoredIntegration;
-use crate::protocol::{McpTool, McpInputSchema};
-use serde_json::{Value, Map};
 
 /// Generator for MCP tools from OpenAPI specs
 pub struct ToolGenerator;
@@ -38,7 +38,11 @@ impl ToolGenerator {
     }
 
     /// Generate MCP tools from an integration
-    pub fn generate_tools(&self, integration_key: &str, stored: &StoredIntegration) -> Vec<McpTool> {
+    pub fn generate_tools(
+        &self,
+        integration_key: &str,
+        stored: &StoredIntegration,
+    ) -> Vec<McpTool> {
         stored
             .operations
             .iter()
@@ -133,8 +137,16 @@ impl ToolGenerator {
 
         McpInputSchema {
             schema_type: "object".to_string(),
-            properties: if properties.is_empty() { None } else { Some(properties) },
-            required: if required.is_empty() { None } else { Some(required) },
+            properties: if properties.is_empty() {
+                None
+            } else {
+                Some(properties)
+            },
+            required: if required.is_empty() {
+                None
+            } else {
+                Some(required)
+            },
         }
     }
 
@@ -233,61 +245,60 @@ impl ToolGenerator {
         let mut properties = Map::new();
         let mut required = Vec::new();
 
-        self.flatten_schema_recursive(schema, &mut properties, &mut required, 0);
+        flatten_schema_recursive(schema, &mut properties, &mut required, 0);
 
         (properties, required)
     }
+}
 
-    fn flatten_schema_recursive(
-        &self,
-        schema: &Value,
-        properties: &mut Map<String, Value>,
-        required: &mut Vec<String>,
-        depth: usize,
-    ) {
-        // Prevent infinite recursion
-        if depth > 10 {
-            return;
+fn flatten_schema_recursive(
+    schema: &Value,
+    properties: &mut Map<String, Value>,
+    required: &mut Vec<String>,
+    depth: usize,
+) {
+    // Prevent infinite recursion
+    if depth > 10 {
+        return;
+    }
+
+    let obj = match schema.as_object() {
+        Some(o) => o,
+        None => return,
+    };
+
+    // Extract direct properties
+    if let Some(props) = obj.get("properties").and_then(|p| p.as_object()) {
+        for (key, value) in props {
+            if !properties.contains_key(key) {
+                properties.insert(key.clone(), value.clone());
+            }
         }
+    }
 
-        let obj = match schema.as_object() {
-            Some(o) => o,
-            None => return,
-        };
-
-        // Extract direct properties
-        if let Some(props) = obj.get("properties").and_then(|p| p.as_object()) {
-            for (key, value) in props {
-                if !properties.contains_key(key) {
-                    properties.insert(key.clone(), value.clone());
+    // Extract required fields
+    if let Some(req) = obj.get("required").and_then(|r| r.as_array()) {
+        for r in req {
+            if let Some(s) = r.as_str() {
+                if !required.contains(&s.to_string()) {
+                    required.push(s.to_string());
                 }
             }
         }
+    }
 
-        // Extract required fields
-        if let Some(req) = obj.get("required").and_then(|r| r.as_array()) {
-            for r in req {
-                if let Some(s) = r.as_str() {
-                    if !required.contains(&s.to_string()) {
-                        required.push(s.to_string());
-                    }
-                }
-            }
+    // Process allOf - merge all schemas
+    if let Some(all_of) = obj.get("allOf").and_then(|a| a.as_array()) {
+        for sub_schema in all_of {
+            flatten_schema_recursive(sub_schema, properties, required, depth + 1);
         }
+    }
 
-        // Process allOf - merge all schemas
-        if let Some(all_of) = obj.get("allOf").and_then(|a| a.as_array()) {
-            for sub_schema in all_of {
-                self.flatten_schema_recursive(sub_schema, properties, required, depth + 1);
-            }
-        }
-
-        // Process oneOf/anyOf - take properties from all options (union)
-        for key in ["oneOf", "anyOf"] {
-            if let Some(variants) = obj.get(key).and_then(|a| a.as_array()) {
-                for sub_schema in variants {
-                    self.flatten_schema_recursive(sub_schema, properties, required, depth + 1);
-                }
+    // Process oneOf/anyOf - take properties from all options (union)
+    for key in ["oneOf", "anyOf"] {
+        if let Some(variants) = obj.get(key).and_then(|a| a.as_array()) {
+            for sub_schema in variants {
+                flatten_schema_recursive(sub_schema, properties, required, depth + 1);
             }
         }
     }
@@ -302,7 +313,7 @@ impl Default for ToolGenerator {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use openapi_parser::{OperationParameter, HttpMethod};
+    use openapi_parser::{HttpMethod, OperationParameter};
 
     fn test_operation() -> ApiOperation {
         ApiOperation {
@@ -314,17 +325,15 @@ mod tests {
             description: Some("Creates a new customer object.".to_string()),
             tags: vec!["Customers".to_string()],
             deprecated: false,
-            parameters: vec![
-                OperationParameter {
-                    name: "email".to_string(),
-                    location: ParameterLocation::Query,
-                    required: true,
-                    description: Some("Customer email".to_string()),
-                    schema: Some(serde_json::json!({"type": "string", "format": "email"})),
-                    example: Some(serde_json::json!("user@example.com")),
-                    deprecated: false,
-                },
-            ],
+            parameters: vec![OperationParameter {
+                name: "email".to_string(),
+                location: ParameterLocation::Query,
+                required: true,
+                description: Some("Customer email".to_string()),
+                schema: Some(serde_json::json!({"type": "string", "format": "email"})),
+                example: Some(serde_json::json!("user@example.com")),
+                deprecated: false,
+            }],
             request_body: None,
             responses: vec![],
             security: vec![],
@@ -348,8 +357,16 @@ mod tests {
 
         let tool = generator.generate_tool("stripe", &operation);
 
-        assert!(tool.description.as_ref().unwrap().contains("Create a customer"));
-        assert!(tool.description.as_ref().unwrap().contains("[POST /v1/customers]"));
+        assert!(tool
+            .description
+            .as_ref()
+            .unwrap()
+            .contains("Create a customer"));
+        assert!(tool
+            .description
+            .as_ref()
+            .unwrap()
+            .contains("[POST /v1/customers]"));
     }
 
     #[test]

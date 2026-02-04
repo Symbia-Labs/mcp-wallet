@@ -37,12 +37,15 @@ impl NamespaceTree {
         let mut tree = Self::new();
 
         for (index, op) in operations.iter().enumerate() {
-            tree.insert(&op.normalized_id, OperationRef {
-                operation_id: op.operation_id.clone(),
-                method: op.method,
-                path: op.path.clone(),
-                index,
-            });
+            tree.insert(
+                &op.normalized_id,
+                OperationRef {
+                    operation_id: op.operation_id.clone(),
+                    method: op.method,
+                    path: op.path.clone(),
+                    index,
+                },
+            );
         }
 
         tree
@@ -60,9 +63,10 @@ impl NamespaceTree {
             return;
         }
 
-        let child = self.children
+        let child = self
+            .children
             .entry(parts[0].to_string())
-            .or_insert_with(NamespaceTree::new);
+            .or_default();
 
         child.insert_parts(&parts[1..], operation);
     }

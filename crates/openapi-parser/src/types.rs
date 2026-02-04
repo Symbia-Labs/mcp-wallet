@@ -1,8 +1,8 @@
 //! Type definitions for parsed OpenAPI specs
 
+use indexmap::IndexMap;
 use serde::{Deserialize, Serialize};
 use std::collections::HashMap;
-use indexmap::IndexMap;
 
 /// HTTP methods supported by OpenAPI
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Hash, Serialize, Deserialize)]
@@ -176,13 +176,9 @@ pub enum SecurityScheme {
         bearer_format: Option<String>,
     },
     /// OAuth2 authentication
-    OAuth2 {
-        flows: OAuth2Flows,
-    },
+    OAuth2 { flows: Box<OAuth2Flows> },
     /// OpenID Connect
-    OpenIdConnect {
-        openid_connect_url: String,
-    },
+    OpenIdConnect { openid_connect_url: String },
 }
 
 /// API key location

@@ -4,9 +4,9 @@ use serde_json::Value;
 use std::sync::Arc;
 use tracing::{debug, error, info};
 
-use super::types::*;
 use super::capabilities::ServerCapabilities;
-use crate::tools::{ToolGenerator, ToolExecutor};
+use super::types::*;
+use crate::tools::{ToolExecutor, ToolGenerator};
 use wallet_core::Wallet;
 
 /// Handler for MCP requests
@@ -131,7 +131,9 @@ impl RequestHandler {
 
         for integration in integrations {
             if let Some(stored) = wallet.integrations.get_stored(&integration.key).await {
-                let integration_tools = self.tool_generator.generate_tools(&integration.key, &stored);
+                let integration_tools = self
+                    .tool_generator
+                    .generate_tools(&integration.key, &stored);
                 tools.extend(integration_tools);
             }
         }
@@ -156,13 +158,13 @@ impl RequestHandler {
             .await;
 
         match result {
-            Ok(tool_result) => {
-                serde_json::to_value(tool_result).map_err(|e| McpError::internal_error(e.to_string()))
-            }
+            Ok(tool_result) => serde_json::to_value(tool_result)
+                .map_err(|e| McpError::internal_error(e.to_string())),
             Err(e) => {
                 error!("Tool execution failed: {}", e);
                 let error_result = ToolCallResult::error(e.to_string());
-                serde_json::to_value(error_result).map_err(|e| McpError::internal_error(e.to_string()))
+                serde_json::to_value(error_result)
+                    .map_err(|e| McpError::internal_error(e.to_string()))
             }
         }
     }

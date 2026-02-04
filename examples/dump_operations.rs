@@ -18,16 +18,25 @@ async fn main() {
     println!("\n=== Looking for chat completions ===");
     for op in &spec.operations {
         if op.operation_id.to_lowercase().contains("chat")
-           || op.operation_id.to_lowercase().contains("completion")
-           || op.path.contains("/chat") {
-            println!("Found: operation_id={}, normalized_id={}, path={}",
-                op.operation_id, op.normalized_id, op.path);
+            || op.operation_id.to_lowercase().contains("completion")
+            || op.path.contains("/chat")
+        {
+            println!(
+                "Found: operation_id={}, normalized_id={}, path={}",
+                op.operation_id, op.normalized_id, op.path
+            );
         }
     }
 
     println!("\n=== First 30 operations ===");
     for (i, op) in spec.operations.iter().take(30).enumerate() {
-        println!("{:3}. {} {} - {} (normalized: {})",
-            i+1, op.method, op.path, op.operation_id, op.normalized_id);
+        println!(
+            "{:3}. {} {} - {} (normalized: {})",
+            i + 1,
+            op.method,
+            op.path,
+            op.operation_id,
+            op.normalized_id
+        );
     }
 }

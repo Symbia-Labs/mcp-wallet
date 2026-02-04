@@ -3,34 +3,40 @@
 use mcp_server::protocol::RequestHandler;
 use serde_json::json;
 use std::sync::Arc;
-use tokio::sync::RwLock;
-use wallet_core::Wallet;
-use wallet_core::storage::EncryptedFileStorage;
 use tempfile::TempDir;
+use tokio::sync::RwLock;
+use wallet_core::storage::EncryptedFileStorage;
+use wallet_core::Wallet;
 
 #[tokio::main]
 async fn main() {
     let temp_dir = TempDir::new().expect("Failed to create temp dir");
     let storage = Arc::new(
         EncryptedFileStorage::with_dir(temp_dir.path().to_path_buf())
-            .expect("Failed to create storage")
+            .expect("Failed to create storage"),
     );
     let mut wallet = Wallet::with_storage(storage);
-    wallet.initialize("test-password").await.expect("Failed to initialize wallet");
+    wallet
+        .initialize("test-password")
+        .await
+        .expect("Failed to initialize wallet");
 
     // Add OpenAI integration
     let spec_url = "https://app.stainless.com/api/spec/documented/openai/openapi.documented.yml";
-    wallet.integrations
+    wallet
+        .integrations
         .add_from_url("openai", spec_url)
         .await
         .expect("Failed to add OpenAI integration");
 
     // Add dummy credential
-    let credential = wallet.credentials
+    let credential = wallet
+        .credentials
         .add_api_key("openai", "OpenAI API Key", "sk-test")
         .await
         .expect("Failed to add credential");
-    wallet.integrations
+    wallet
+        .integrations
         .set_credential("openai", credential.id)
         .await
         .expect("Failed to bind credential");
@@ -51,17 +57,16 @@ async fn main() {
     handler.handle(init_msg).await;
 
     // List tools
-    let list_msg = mcp_server::protocol::McpMessage::request(
-        json!(2),
-        "tools/list",
-        None,
-    );
+    let list_msg = mcp_server::protocol::McpMessage::request(json!(2), "tools/list", None);
 
     let response = handler.handle(list_msg).await.expect("No response");
     let result = response.result.expect("No result");
 
     // Find the chat completion tool
-    let tools = result.get("tools").and_then(|t| t.as_array()).expect("No tools");
+    let tools = result
+        .get("tools")
+        .and_then(|t| t.as_array())
+        .expect("No tools");
 
     for tool in tools {
         let name = tool.get("name").and_then(|n| n.as_str()).unwrap_or("");
@@ -80,8 +85,12 @@ async fn main() {
                     // Show some key properties
                     for key in ["model", "messages", "temperature", "stream"] {
                         if let Some(prop) = obj.get(key) {
-                            let prop_type = prop.get("type").map(|t| t.to_string()).unwrap_or("?".to_string());
-                            let desc = prop.get("description")
+                            let prop_type = prop
+                                .get("type")
+                                .map(|t| t.to_string())
+                                .unwrap_or("?".to_string());
+                            let desc = prop
+                                .get("description")
                                 .and_then(|d| d.as_str())
                                 .map(|s| &s[..s.len().min(60)])
                                 .unwrap_or("?");

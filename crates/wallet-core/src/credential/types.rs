@@ -6,21 +6,16 @@ use uuid::Uuid;
 use zeroize::{Zeroize, ZeroizeOnDrop};
 
 /// Type of credential
-#[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Default, Serialize, Deserialize)]
 #[serde(rename_all = "snake_case")]
 pub enum CredentialType {
     /// API key (static token)
+    #[default]
     ApiKey,
     /// OAuth2 access token
     OAuth2Token,
     /// Basic authentication (username:password)
     BasicAuth,
-}
-
-impl Default for CredentialType {
-    fn default() -> Self {
-        Self::ApiKey
-    }
 }
 
 /// Credential metadata (safe to display)

@@ -4,11 +4,11 @@
 //! Supports both stdio and HTTP/SSE transports.
 
 pub mod protocol;
-pub mod transport;
-pub mod tools;
 mod server;
+pub mod tools;
+pub mod transport;
 
+pub use protocol::{McpError, McpMessage, ServerCapabilities};
 pub use server::{McpServer, ServerMode};
-pub use protocol::{McpMessage, McpError, ServerCapabilities};
-pub use transport::{StdioTransport, HttpTransport};
-pub use tools::{ToolGenerator, ToolExecutor};
+pub use tools::{ToolExecutor, ToolGenerator};
+pub use transport::{HttpTransport, StdioTransport};

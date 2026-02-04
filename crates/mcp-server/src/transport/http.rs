@@ -12,9 +12,9 @@ use std::convert::Infallible;
 use std::sync::Arc;
 use tokio::sync::RwLock;
 use tower_http::cors::{Any, CorsLayer};
-use tracing::{debug, error, info};
+use tracing::{debug, info};
 
-use crate::protocol::{McpMessage, McpError, RequestHandler};
+use crate::protocol::{McpMessage, RequestHandler};
 use wallet_core::Wallet;
 
 /// Shared state for HTTP handlers
@@ -91,7 +91,7 @@ async fn handle_mcp_request(
 
 /// Handle MCP via Server-Sent Events
 async fn handle_mcp_sse(
-    State(state): State<Arc<AppState>>,
+    State(_state): State<Arc<AppState>>,
 ) -> Sse<impl Stream<Item = Result<Event, Infallible>>> {
     info!("SSE connection established");
 

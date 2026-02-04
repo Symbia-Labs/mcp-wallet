@@ -6,10 +6,11 @@ use serde::{Deserialize, Serialize};
 use uuid::Uuid;
 
 /// Status of an integration
-#[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Default, Serialize, Deserialize)]
 #[serde(rename_all = "snake_case")]
 pub enum IntegrationStatus {
     /// Integration is pending setup (no credential)
+    #[default]
     Pending,
     /// Integration is active and ready to use
     Active,
@@ -17,12 +18,6 @@ pub enum IntegrationStatus {
     Error,
     /// Integration is disabled
     Disabled,
-}
-
-impl Default for IntegrationStatus {
-    fn default() -> Self {
-        Self::Pending
-    }
 }
 
 /// An integration represents a configured OpenAPI service

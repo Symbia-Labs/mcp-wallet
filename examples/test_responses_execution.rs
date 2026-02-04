@@ -3,10 +3,10 @@
 use mcp_server::tools::ToolExecutor;
 use serde_json::json;
 use std::sync::Arc;
-use tokio::sync::RwLock;
-use wallet_core::Wallet;
-use wallet_core::storage::EncryptedFileStorage;
 use tempfile::TempDir;
+use tokio::sync::RwLock;
+use wallet_core::storage::EncryptedFileStorage;
+use wallet_core::Wallet;
 
 #[tokio::main]
 async fn main() {
@@ -15,29 +15,39 @@ async fn main() {
     let temp_dir = TempDir::new().expect("Failed to create temp dir");
     let storage = Arc::new(
         EncryptedFileStorage::with_dir(temp_dir.path().to_path_buf())
-            .expect("Failed to create storage")
+            .expect("Failed to create storage"),
     );
     let mut wallet = Wallet::with_storage(storage);
-    wallet.initialize("test-password").await.expect("Failed to initialize wallet");
+    wallet
+        .initialize("test-password")
+        .await
+        .expect("Failed to initialize wallet");
 
     let spec_url = "https://app.stainless.com/api/spec/documented/openai/openapi.documented.yml";
-    wallet.integrations
+    wallet
+        .integrations
         .add_from_url("openai", spec_url)
         .await
         .expect("Failed to add integration");
 
-    let credential = wallet.credentials
+    let credential = wallet
+        .credentials
         .add_api_key("openai", "OpenAI API Key", &api_key)
         .await
         .expect("Failed to add credential");
-    wallet.integrations
+    wallet
+        .integrations
         .set_credential("openai", credential.id)
         .await
         .expect("Failed to bind credential");
 
     // Look up the operation
     let stored = wallet.integrations.get_stored("openai").await.unwrap();
-    let op = stored.operations.iter().find(|o| o.operation_id == "createResponse").unwrap();
+    let op = stored
+        .operations
+        .iter()
+        .find(|o| o.operation_id == "createResponse")
+        .unwrap();
 
     println!("=== Operation Details ===");
     println!("operation_id: {}", op.operation_id);
@@ -60,7 +70,10 @@ async fn main() {
     println!("Tool name: {}", tool_name);
     println!("Integration key: {}", parts[0]);
     println!("Operation path (raw): {}", parts[1]);
-    println!("Operation path (normalized): {}", parts[1].replace('_', "."));
+    println!(
+        "Operation path (normalized): {}",
+        parts[1].replace('_', ".")
+    );
 
     // Check if this matches the normalized_id
     let expected_path = parts[1].replace('_', ".");
@@ -78,7 +91,10 @@ async fn main() {
     });
 
     println!("\n=== Executing Tool ===");
-    println!("Arguments: {}", serde_json::to_string_pretty(&args).unwrap());
+    println!(
+        "Arguments: {}",
+        serde_json::to_string_pretty(&args).unwrap()
+    );
 
     match executor.execute("openai_create_response", Some(args)).await {
         Ok(result) => {
