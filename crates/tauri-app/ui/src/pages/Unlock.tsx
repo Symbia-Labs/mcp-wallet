@@ -1,7 +1,7 @@
 import { useState } from "react";
-import { Wallet, Eye, EyeOff, Shield, Lock } from "lucide-react";
+import { Wallet, Eye, EyeOff, Shield, Lock, AlertTriangle } from "lucide-react";
 import { WalletState } from "../lib/types";
-import { initializeWallet, unlockWallet } from "../lib/api";
+import { initializeWallet, unlockWallet, resetWallet } from "../lib/api";
 
 interface UnlockPageProps {
   state: WalletState;
@@ -15,8 +15,26 @@ export default function UnlockPage({ state, onUnlock, onInitialize }: UnlockPage
   const [showPassword, setShowPassword] = useState(false);
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
+  const [showResetConfirm, setShowResetConfirm] = useState(false);
+  const [resetting, setResetting] = useState(false);
 
   const isInitializing = state === "not_initialized";
+
+  const handleReset = async () => {
+    setResetting(true);
+    setError("");
+    try {
+      await resetWallet();
+      setShowResetConfirm(false);
+      setPassword("");
+      setConfirmPassword("");
+      window.location.reload();
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "Failed to reset wallet");
+    } finally {
+      setResetting(false);
+    }
+  };
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -139,7 +157,51 @@ export default function UnlockPage({ state, onUnlock, onInitialize }: UnlockPage
                 </>
               )}
             </button>
+
+            {/* Reset Wallet Option (only when locked) */}
+            {!isInitializing && (
+              <button
+                type="button"
+                onClick={() => setShowResetConfirm(true)}
+                className="w-full text-gray-500 hover:text-gray-300 text-sm py-2 transition-colors"
+              >
+                Forgot password? Reset wallet
+              </button>
+            )}
           </form>
+
+          {/* Reset Confirmation Dialog */}
+          {showResetConfirm && (
+            <div className="mt-6 pt-6 border-t border-gray-800">
+              <div className="bg-red-500/10 border border-red-500/30 rounded-xl p-4">
+                <div className="flex gap-3">
+                  <AlertTriangle className="w-6 h-6 text-red-400 flex-shrink-0" />
+                  <div className="flex-1">
+                    <h3 className="text-red-400 font-medium mb-2">Reset Wallet?</h3>
+                    <p className="text-gray-400 text-sm mb-4">
+                      This will permanently delete all your integrations and credentials.
+                      This action cannot be undone.
+                    </p>
+                    <div className="flex gap-3">
+                      <button
+                        onClick={handleReset}
+                        disabled={resetting}
+                        className="flex-1 bg-red-600 hover:bg-red-700 text-white font-medium py-2 px-4 rounded-lg transition-colors disabled:opacity-50 text-sm"
+                      >
+                        {resetting ? "Resetting..." : "Yes, Reset Everything"}
+                      </button>
+                      <button
+                        onClick={() => setShowResetConfirm(false)}
+                        className="flex-1 bg-gray-700 hover:bg-gray-600 text-white font-medium py-2 px-4 rounded-lg transition-colors text-sm"
+                      >
+                        Cancel
+                      </button>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+          )}
 
           {/* Security Note */}
           {isInitializing && (

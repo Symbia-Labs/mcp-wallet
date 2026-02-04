@@ -246,6 +246,13 @@ async fn unlock_wallet(password: String, state: State<'_, AppState>) -> Result<(
 
 #[tauri::command]
 async fn lock_wallet(state: State<'_, AppState>) -> Result<(), String> {
+    // Stop the server first to prevent any in-flight requests
+    {
+        let mut server = state.server.write().await;
+        *server = None;
+    }
+
+    // Lock the wallet (clears master key from memory and revokes session token)
     let mut wallet = state.wallet.write().await;
     wallet.lock().await.map_err(|e| e.to_string())
 }

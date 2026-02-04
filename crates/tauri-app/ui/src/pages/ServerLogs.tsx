@@ -121,7 +121,6 @@ export default function ServerLogsPage() {
   const [isLive, setIsLive] = useState(true);
   const [serverRunning, setServerRunning] = useState(false);
   const [filter, setFilter] = useState<"all" | "in" | "out">("all");
-  const logsEndRef = useRef<HTMLDivElement>(null);
   const intervalRef = useRef<ReturnType<typeof setInterval>>();
 
   useEffect(() => {
@@ -133,7 +132,7 @@ export default function ServerLogsPage() {
       // Simulate incoming MCP messages
       intervalRef.current = setInterval(() => {
         if (Math.random() > 0.3) {
-          setLogs((prev) => [...prev.slice(-500), generateMockLogEntry()]);
+          setLogs((prev) => [generateMockLogEntry(), ...prev.slice(0, 500)]);
         }
       }, 800 + Math.random() * 1200);
     }
@@ -145,12 +144,6 @@ export default function ServerLogsPage() {
     };
   }, [isLive, serverRunning]);
 
-  useEffect(() => {
-    if (isLive) {
-      logsEndRef.current?.scrollIntoView({ behavior: "smooth" });
-    }
-  }, [logs, isLive]);
-
   const checkServerStatus = async () => {
     const status = await getServerStatus();
     setServerRunning(status.running);
@@ -159,10 +152,13 @@ export default function ServerLogsPage() {
   const filteredLogs =
     filter === "all" ? logs : logs.filter((l) => l.direction === filter);
 
+  // Download logs in chronological order (oldest first)
+  const chronologicalLogs = [...logs].reverse();
+
   const clearLogs = () => setLogs([]);
 
   const downloadLogs = () => {
-    const content = logs
+    const content = chronologicalLogs
       .map(
         (l) =>
           `${l.timestamp.toISOString()} [${l.direction.toUpperCase()}] ${JSON.stringify(l.data)}`
@@ -295,8 +291,8 @@ export default function ServerLogsPage() {
         </div>
       </div>
 
-      {/* Log View */}
-      <div className="flex-1 bg-gray-900 rounded-lg border border-gray-800 overflow-hidden">
+      {/* Log View - isolated scrollbar, does not affect sidebar */}
+      <div className="flex-1 min-h-0 bg-gray-900 rounded-lg border border-gray-800 overflow-hidden">
         {!serverRunning ? (
           <div className="flex flex-col items-center justify-center h-full text-gray-400">
             <Server className="w-12 h-12 mb-4 text-gray-600" />
@@ -320,7 +316,6 @@ export default function ServerLogsPage() {
             {filteredLogs.map((log) => (
               <LogEntryRow key={log.id} entry={log} />
             ))}
-            <div ref={logsEndRef} />
           </div>
         )}
       </div>
