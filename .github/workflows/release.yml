@@ -140,6 +140,14 @@ jobs:
       - name: Build CLI server (must be built before Tauri for sidecar bundling)
         run: cargo build --release --package mcp-server --target ${{ matrix.target }}
 
+      - name: Copy CLI server for Tauri sidecar (Tauri expects it at target/release with target suffix)
+        run: |
+          mkdir -p target/release
+          cp target/${{ matrix.target }}/release/mcp-wallet-server${{ matrix.platform == 'windows-latest' && '.exe' || '' }} \
+             target/release/mcp-wallet-server-${{ matrix.target }}${{ matrix.platform == 'windows-latest' && '.exe' || '' }}
+          echo "Copied CLI server to: target/release/mcp-wallet-server-${{ matrix.target }}${{ matrix.platform == 'windows-latest' && '.exe' || '' }}"
+          ls -la target/release/ | grep mcp-wallet
+
       - name: Build Tauri app (bundles CLI server as sidecar)
         working-directory: crates/tauri-app
         run: cargo tauri build --target ${{ matrix.target }}
