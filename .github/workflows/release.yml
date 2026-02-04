@@ -140,13 +140,24 @@ jobs:
       - name: Build CLI server (must be built before Tauri for sidecar bundling)
         run: cargo build --release --package mcp-server --target ${{ matrix.target }}
 
-      - name: Copy CLI server for Tauri sidecar (Tauri expects it at target/release with target suffix)
+      - name: Copy CLI server for Tauri sidecar (Unix)
+        if: matrix.platform != 'windows-latest'
         run: |
           mkdir -p target/release
-          cp target/${{ matrix.target }}/release/mcp-wallet-server${{ matrix.platform == 'windows-latest' && '.exe' || '' }} \
-             target/release/mcp-wallet-server-${{ matrix.target }}${{ matrix.platform == 'windows-latest' && '.exe' || '' }}
-          echo "Copied CLI server to: target/release/mcp-wallet-server-${{ matrix.target }}${{ matrix.platform == 'windows-latest' && '.exe' || '' }}"
+          cp target/${{ matrix.target }}/release/mcp-wallet-server \
+             target/release/mcp-wallet-server-${{ matrix.target }}
+          echo "Copied CLI server to: target/release/mcp-wallet-server-${{ matrix.target }}"
           ls -la target/release/ | grep mcp-wallet
+
+      - name: Copy CLI server for Tauri sidecar (Windows)
+        if: matrix.platform == 'windows-latest'
+        shell: pwsh
+        run: |
+          New-Item -ItemType Directory -Force -Path target/release | Out-Null
+          Copy-Item "target/${{ matrix.target }}/release/mcp-wallet-server.exe" `
+                    "target/release/mcp-wallet-server-${{ matrix.target }}.exe"
+          Write-Host "Copied CLI server to: target/release/mcp-wallet-server-${{ matrix.target }}.exe"
+          Get-ChildItem target/release/ | Where-Object { $_.Name -like "*mcp-wallet*" }
 
       - name: Build Tauri app (bundles CLI server as sidecar)
         working-directory: crates/tauri-app
