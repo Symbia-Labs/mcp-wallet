@@ -38,7 +38,6 @@ impl std::fmt::Display for EncryptedData {
 }
 
 impl EncryptedData {
-
     /// Parse from the format: `{iv_hex}:{auth_tag_hex}:{ciphertext_hex}`
     pub fn from_string(s: &str) -> Result<Self> {
         let parts: Vec<&str> = s.split(':').collect();

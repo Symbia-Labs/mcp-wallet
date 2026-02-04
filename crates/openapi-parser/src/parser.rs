@@ -193,7 +193,9 @@ impl OpenApiParser {
                     .as_ref()
                     .map(Self::convert_oauth2_flows)
                     .unwrap_or_default();
-                Some(SecurityScheme::OAuth2 { flows: Box::new(flows) })
+                Some(SecurityScheme::OAuth2 {
+                    flows: Box::new(flows),
+                })
             }
             "openIdConnect" => Some(SecurityScheme::OpenIdConnect {
                 openid_connect_url: raw.openid_connect_url.clone().unwrap_or_default(),

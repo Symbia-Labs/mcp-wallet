@@ -63,10 +63,7 @@ impl NamespaceTree {
             return;
         }
 
-        let child = self
-            .children
-            .entry(parts[0].to_string())
-            .or_default();
+        let child = self.children.entry(parts[0].to_string()).or_default();
 
         child.insert_parts(&parts[1..], operation);
     }
